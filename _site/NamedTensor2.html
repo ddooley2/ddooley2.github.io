@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Tensor Considered Harmful Pt. 2</title>
+  <meta name="description" content="Named tensors for better deep learning code.">
+
+  <meta name="og:image" href="http://nlp.seas.harvard.edu/SEAS.png" />
+
+<link rel="icon" type="image/png" href="/logos/tnlogo.png" />
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://localhost:4000/NamedTensor2.html">
+  <link rel="alternate" type="application/rss+xml" title="" href="http://localhost:4000/feed.xml">
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<!-- Latest compiled and minified CSS -->
+  <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+  tex2jax: {
+  inlineMath: [['$','$'], ['\\(','\\)']],
+  processEscapes: true
+  }
+  });
+  </script>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-116932893-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'UA-116932893-1');
+  </script>
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+
+<script src="/bib-list.js"></script>
+
+<link rel="stylesheet" href="/bib-publication-list.css" type="text/css" />
+
+
+<!-- Optional theme -->
+<!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous"> -->
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <span><img width="50px" style="padding:5px" src="/logos/tnlogo.png"></span>
+
+    <span>
+        <!-- <a class="site-title" href="/"></a> -->
+
+    </span>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+        
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          <a class="page-link" href="/">Main</a>
+          
+          
+          
+          <a class="page-link" href="/papers/">Publications</a>
+          
+          
+          
+          <a class="page-link" href="/rawpapers/"></a>
+          
+          
+        <!-- <a class="page-link" href="http://blog.rush-nlp.com">Blog</a> -->
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post">
+
+
+
+  <div class="post-content">
+    <p><em>Alexander Rush @harvardnlp</em></p>
+
+<p><a href="https://colab.research.google.com/github/harvardnlp/namedtensor/blob/master/notebooks/NamedTensor2.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" /></a></p>
+
+<p><em>TL;DR: The previous post <a href="http://nlp.seas.harvard.edu/NamedTensor">Tensor Considered
+Harmful</a> called for using <strong>named
+tensors</strong> to remedy some of the issues with the ubiquitous Tensor object. The
+post sparked significant conversation about whether this was a useful technique
+or would simply litter code unnecessary annotations. This follow-up considers
+the use of named tensors in real-world deep learning code. This post takes a
+more pragmatic tack, and examines two methods for integrating named tensors into
+the current deep learning ecosystem. As before all the code is available in the
+<strong>PyTorch library</strong> accompanying this blog post is available as
+<a href="https://github.com/harvardnlp/NamedTensor">namedtensor</a> which has been
+significantly changed based on ideas from
+<a href="https://twitter.com/harvardnlp/status/1080911225427496966">twitter</a> / <a href="https://www.reddit.com/r/MachineLearning/comments/accmek/d_tensor_considered_har
+mful_a_polemic_against/">reddit</a> comments.</em></p>
+
+<ul id="markdown-toc">
+  <li><a href="#named-tensors-for-deep-learning" id="markdown-toc-named-tensors-for-deep-learning">Named Tensors for Deep Learning</a>    <ul>
+      <li><a href="#method-1-name-annotations" id="markdown-toc-method-1-name-annotations">Method 1: Name Annotations</a></li>
+      <li><a href="#method-2-named-everything" id="markdown-toc-method-2-named-everything">Method 2: Named Everything</a></li>
+    </ul>
+  </li>
+  <li><a href="#experiments-on-canonical-models" id="markdown-toc-experiments-on-canonical-models">Experiments on Canonical Models</a>    <ul>
+      <li><a href="#mnist" id="markdown-toc-mnist">MNist</a></li>
+      <li><a href="#text-classification" id="markdown-toc-text-classification">Text Classification</a></li>
+      <li><a href="#vae" id="markdown-toc-vae">VAE</a></li>
+    </ul>
+  </li>
+  <li><a href="#next-steps" id="markdown-toc-next-steps">Next Steps</a></li>
+</ul>
+
+<p><em>Changelog</em></p>
+
+<ul>
+  <li>Thanks to Stephen Hoyer for suggesting several useful changes to this and the last post
+to simplify the syntax.</li>
+</ul>
+
+<h1 id="named-tensors-for-deep-learning">Named Tensors for Deep Learning</h1>
+
+<p>The previous post  <a href="http://nlp.seas.harvard.edu/NamedTensor">Tensor Considered
+Harmful</a> proposes that many of the core
+usability issues in deep learning frameworks come from manipulating and aligning
+tensor objects. It shows this by playing aroung with some toy tensor examples.</p>
+
+<p>However, in hindsight, this was cheating. To actually use <em>named tensors</em> we
+need to interact with the ecosystem at large. The entire of richness of PyTorch
+is its libraries, which like it or not, are written with a tuple-based calling
+convention. If we want to write real software in real environments, it is not
+sufficient to simply show that naming is useful, it has be usable with the
+current functionality.</p>
+
+<p><strong>The Challenge</strong>: How can we <em>lift</em> deep learning systems in a pragmatic manner
+so that they preserve the the semantics of <em>named tensors</em>?</p>
+
+<p>I do not have the correct answer to this question. But in this post, I will
+consider two methods: explicit annotations and lifting the library.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#@title Setup
+#!rm -fr NamedTensor/; git clone -q https://github.com/harvardnlp/NamedTensor.git
+#!cd NamedTensor; pip install -q .; pip install -q torch numpy opt_einsum
+#!cp NamedTensor/notebooks/test* .</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="n">numpy</span>
+<span class="kn">import</span> <span class="n">torch</span>
+<span class="kn">import</span> <span class="n">torch.nn</span> <span class="k">as</span> <span class="n">nn</span>
+<span class="kn">import</span> <span class="n">torch.nn.functional</span> <span class="k">as</span> <span class="n">F</span>
+<span class="kn">from</span> <span class="n">namedtensor</span> <span class="kn">import</span> <span class="n">NamedTensor</span><span class="p">,</span> <span class="n">ntorch</span>
+<span class="kn">from</span> <span class="n">namedtensor</span> <span class="kn">import</span> <span class="n">_im_init</span>
+<span class="nf">_im_init</span><span class="p">()</span></code></pre></figure>
+
+<h2 id="method-1-name-annotations">Method 1: Name Annotations</h2>
+
+<p>In PyTorch, the standard deep learning library lives in the <code class="language-plaintext highlighter-rouge">nn</code> module. This
+library contains bindings to all the useful functions that make up neural
+networks. To use them we pass around and manipulate tensor objects. Here are two
+mini modules:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">relu</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">ReLU</span><span class="p">()</span>
+<span class="n">linear</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Linear</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">linear</span></code></pre></figure>
+
+<div class="language-plaintext output_data_text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Linear(in_features=3, out_features=1, bias=True)
+</code></pre></div></div>
+
+<p>The API for these modules is specified through the shape of the tensors passed.
+For instance for “relu” we see that this keeps the size the same as the
+original.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="se">\n</span><span class="sh">"</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="n">relu</span><span class="p">.</span><span class="n">__doc__</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="sh">"</span><span class="se">\n</span><span class="sh">"</span><span class="p">)[:</span><span class="mi">13</span><span class="p">]))</span></code></pre></figure>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Applies the rectified linear unit function element-wise
+    :math:`\text{ReLU}(x)= \max(0, x)`
+
+    .. image:: scripts/activation_images/ReLU.png
+
+    Args:
+        inplace: can optionally do the operation in-place. Default: ``False``
+
+    Shape:
+        - Input: :math:`(N, *)` where `*` means, any number of additional
+          dimensions
+        - Output: :math:`(N, *)`, same shape as the input
+</code></pre></div></div>
+
+<p>On the other hand if we look at the linear object we can see that it takes as
+input something of the form “(N, *, in_features)” and outputs something of the
+form  “(N, *, out_features)”</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="se">\n</span><span class="sh">"</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="n">linear</span><span class="p">.</span><span class="n">__doc__</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="sh">"</span><span class="se">\n</span><span class="sh">"</span><span class="p">)[:</span><span class="mi">14</span><span class="p">]))</span></code></pre></figure>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Applies a linear transformation to the incoming data: :math:`y = xA^T + b`
+
+    Args:
+        in_features: size of each input sample
+        out_features: size of each output sample
+        bias: If set to False, the layer will not learn an additive bias.
+            Default: ``True``
+
+    Shape:
+        - Input: :math:`(N, *, \text{in\_features})` where :math:`*` means any number of
+          additional dimensions
+        - Output: :math:`(N, *, \text{out\_features})` where all but the last dimension
+          are the same shape as the input.
+</code></pre></div></div>
+
+<p>This gives a rough sense of the API. Now let’s try this out with our images.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">ims</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">tensor</span><span class="p">(</span><span class="n">numpy</span><span class="p">.</span><span class="nf">load</span><span class="p">(</span><span class="sh">'</span><span class="s">test_images.npy</span><span class="sh">'</span><span class="p">),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="bp">False</span><span class="p">).</span><span class="nf">float</span><span class="p">()</span>
+<span class="n">ims</span> <span class="o">=</span> <span class="nc">NamedTensor</span><span class="p">(</span><span class="n">ims</span><span class="p">,</span> <span class="p">(</span><span class="sh">"</span><span class="s">b</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">h</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">w</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">c</span><span class="sh">"</span><span class="p">))</span>
+<span class="n">first</span> <span class="o">=</span> <span class="n">ims</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="sh">"</span><span class="s">b</span><span class="sh">"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">first</span></code></pre></figure>
+
+<p><img src="/images/namedtensor2_17_0.png" alt="png" /></p>
+
+<p>The standard non-named way is to call these directly.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="nf">relu</span><span class="p">(</span><span class="n">first</span><span class="p">.</span><span class="n">values</span><span class="p">.</span><span class="nf">sub</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)).</span><span class="nf">add</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span></code></pre></figure>
+
+<p><img src="/images/namedtensor2_19_0.png" alt="png" /></p>
+
+<p>Our approach is going to instead explicitly chain the operation through the <code class="language-plaintext highlighter-rouge">op</code>
+method. This method takes in an function that acts on the raw tensor.</p>
+
+<p>In this case of relu, it is pretty boring it just applies the function directly.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">first</span><span class="p">.</span><span class="nf">sub</span><span class="p">(</span><span class="mf">0.5</span><span class="p">).</span><span class="nf">op</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nf">relu</span><span class="p">(</span><span class="n">x</span><span class="p">)).</span><span class="nf">add</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+
+<span class="c1"># or
+</span>
+<span class="n">first</span><span class="p">.</span><span class="nf">sub</span><span class="p">(</span><span class="mf">0.5</span><span class="p">).</span><span class="nf">op</span><span class="p">(</span><span class="n">relu</span><span class="p">).</span><span class="nf">add</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span></code></pre></figure>
+
+<p><img src="/images/namedtensor2_21_0.png" alt="png" /></p>
+
+<p>Things get more interesting when we apply <code class="language-plaintext highlighter-rouge">linear</code>. This operation changes the
+size of the last dimension. When we do this we can either leave it alone or supply a new name.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">first</span><span class="p">.</span><span class="nf">op</span><span class="p">(</span><span class="n">linear</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">first</span><span class="p">.</span><span class="nf">op</span><span class="p">(</span><span class="n">linear</span><span class="p">,</span> <span class="n">c2</span><span class="o">=</span><span class="sh">"</span><span class="s">c</span><span class="sh">"</span><span class="p">).</span><span class="nf">get</span><span class="p">(</span><span class="sh">"</span><span class="s">c2</span><span class="sh">"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></code></pre></figure>
+
+<p><img src="/images/namedtensor2_24_0.png" alt="png" /></p>
+
+<p>I say this approach is pragmatic, because it still requires us to give the
+correct ordering to all the pytorch modules, and to give new names. This can be
+a bit annoying, but I would argue it makes for more readable and safer code.</p>
+
+<p>For instance if we look at the shape of the Conv2d module we see that it expects
+channel first and changes three dimensions.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">conv</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Conv2d</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="se">\n</span><span class="sh">"</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="n">conv</span><span class="p">.</span><span class="n">__doc__</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="sh">"</span><span class="se">\n</span><span class="sh">"</span><span class="p">)[</span><span class="mi">75</span><span class="p">:</span><span class="mi">85</span><span class="p">]))</span></code></pre></figure>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    Shape:
+        - Input: :math:`(N, C_{in}, H_{in}, W_{in})`
+        - Output: :math:`(N, C_{out}, H_{out}, W_{out})` where
+
+          .. math::
+              H_{out} = \left\lfloor\frac{H_{in}  + 2 \times \text{padding}[0] - \text{dilation}[0]
+                        \times (\text{kernel\_size}[0] - 1) - 1}{\text{stride}[0]} + 1\right\rfloor
+
+          .. math::
+              W_{out} = \left\lfloor\frac{W_{in}  + 2 \times \text{padding}[1] - \text{dilation}[1]
+</code></pre></div></div>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">ims</span><span class="p">.</span><span class="nf">transpose</span><span class="p">(</span><span class="sh">"</span><span class="s">c</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">h</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">w</span><span class="sh">"</span><span class="p">).</span><span class="nf">op</span><span class="p">(</span><span class="n">conv</span><span class="p">,</span> <span class="n">c2</span><span class="o">=</span><span class="sh">"</span><span class="s">c</span><span class="sh">"</span><span class="p">,</span> <span class="n">h2</span><span class="o">=</span><span class="sh">"</span><span class="s">h</span><span class="sh">"</span><span class="p">,</span> <span class="n">w2</span><span class="o">=</span><span class="sh">"</span><span class="s">w</span><span class="sh">"</span><span class="p">)</span> \
+   <span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="sh">"</span><span class="s">b</span><span class="sh">"</span><span class="p">,</span> <span class="mi">0</span><span class="p">).</span><span class="nf">transpose</span><span class="p">(</span><span class="sh">"</span><span class="s">h2</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">w2</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">c2</span><span class="sh">"</span><span class="p">)</span></code></pre></figure>
+
+<p><img src="/images/namedtensor2_27_0.png" alt="png" /></p>
+
+<p>The <code class="language-plaintext highlighter-rouge">op</code> method is the core extension for interacting with “unsafe”, unnamed
+PyTorch. We also consider two related methods. The method <code class="language-plaintext highlighter-rouge">reduce</code> wraps
+operations that drop a dimension, and the method <code class="language-plaintext highlighter-rouge">augment</code> wraps operations that
+add a new dimension.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">loss</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">NLLLoss</span><span class="p">(</span><span class="nb">reduce</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="n">output</span> <span class="o">=</span> <span class="n">ntorch</span><span class="p">.</span><span class="nf">randn</span><span class="p">(</span><span class="nf">dict</span><span class="p">(</span><span class="n">batch</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">classes</span><span class="o">=</span><span class="mi">20</span><span class="p">)).</span><span class="nf">softmax</span><span class="p">(</span><span class="sh">"</span><span class="s">classes</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">targets</span> <span class="o">=</span> <span class="n">ntorch</span><span class="p">.</span><span class="nf">ones</span><span class="p">(</span><span class="nf">dict</span><span class="p">(</span><span class="n">batch</span><span class="o">=</span> <span class="mi">10</span><span class="p">)).</span><span class="nf">long</span><span class="p">()</span>
+<span class="n">l</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nf">loss</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">targets</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+<span class="n">output</span><span class="p">.</span><span class="nf">reduce</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="p">(</span><span class="sh">"</span><span class="s">classes</span><span class="sh">"</span><span class="p">)).</span><span class="n">shape</span></code></pre></figure>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/usr/local/lib/python3.6/dist-packages/torch/nn/_reduction.py:49: UserWarning: size_average and reduce args will be deprecated, please use reduction='none' instead.
+  warnings.warn(warning.format(ret))
+</code></pre></div></div>
+
+<div class="language-plaintext output_data_text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>OrderedDict([('batch', 10)])
+</code></pre></div></div>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">embedding</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Embedding</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">ntorch</span><span class="p">.</span><span class="nf">ones</span><span class="p">(</span><span class="nf">dict</span><span class="p">(</span><span class="n">batch</span><span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">slen</span><span class="o">=</span><span class="mi">20</span><span class="p">)).</span><span class="nf">long</span><span class="p">()</span>
+<span class="n">x</span><span class="p">.</span><span class="nf">augment</span><span class="p">(</span><span class="n">embedding</span><span class="p">,</span> <span class="sh">"</span><span class="s">embeddingsize</span><span class="sh">"</span><span class="p">).</span><span class="n">shape</span></code></pre></figure>
+
+<div class="language-plaintext output_data_text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>OrderedDict([('batch', 10), ('slen', 20), ('embeddingsize', 20)])
+</code></pre></div></div>
+
+<p>These methods are really just syntactic sugar on top of the <code class="language-plaintext highlighter-rouge">op</code> method above,
+but they make it a bit easier to tell what is happening when you read the code.</p>
+
+<h2 id="method-2-named-everything">Method 2: Named Everything</h2>
+
+<p>The above approach is relatively general. We want to use the pytorch library so
+we need to type it on input and output so that we can maintain our labels.
+Ideally though we can know exactly the names of the dimensions that are being
+used so that we can propagate them through.</p>
+
+<p>Interestingly the PyTorch distributions library is written in such a way to make
+this possible, so it is fun to see what it looks like as a named library.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="n">torch.distributions</span> <span class="k">as</span> <span class="n">distributions</span>
+<span class="kn">import</span> <span class="n">seaborn</span>
+<span class="kn">import</span> <span class="n">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">from</span> <span class="n">namedtensor</span> <span class="kn">import</span> <span class="n">ndistributions</span></code></pre></figure>
+
+<p>First let’s make some parameters for a multivariate normal. and make a
+distribution.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">mu</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">Sigma</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">Sigma</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">tensor</span><span class="p">([[</span><span class="mf">1.</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]])</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">dist</span> <span class="o">=</span> <span class="n">distributions</span><span class="p">.</span><span class="nc">MultivariateNormal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">Sigma</span><span class="p">)</span></code></pre></figure>
+
+<p>Okay, so what happened here? We made a distribution object that has a bunch of
+different distributions all combined together. This object has two important
+properties, its batch shape and its event shape. In particular this is a batch
+of 10 distributions each over with 2D outputs.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">dist</span><span class="p">.</span><span class="n">batch_shape</span><span class="p">,</span> <span class="n">dist</span><span class="p">.</span><span class="n">event_shape</span></code></pre></figure>
+
+<div class="language-plaintext output_data_text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(torch.Size([10]), torch.Size([2]))
+</code></pre></div></div>
+
+<p>Now let’s say we want to sample from all of these distributions simultaneously.
+We can do that with this call.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">samples</span> <span class="o">=</span> <span class="n">dist</span><span class="p">.</span><span class="nf">sample</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="nc">Size</span><span class="p">([</span><span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">]))</span>
+<span class="n">samples</span><span class="p">.</span><span class="n">shape</span></code></pre></figure>
+
+<div class="language-plaintext output_data_text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>torch.Size([20, 30, 10, 2])
+</code></pre></div></div>
+
+<p>So now we have an object that is 20x30 samples of a 10 batches each of dim 2.
+This is nice to have, but we have to keep track of events, batches, samples…
+It gets hard fast.</p>
+
+<p>Let’s rewind and try it in named world now.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">mu</span> <span class="o">=</span> <span class="n">ntorch</span><span class="p">.</span><span class="nf">randn</span><span class="p">(</span><span class="nf">dict</span><span class="p">(</span><span class="n">dist</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="mi">2</span><span class="p">)).</span><span class="nf">mul</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">Sigma</span> <span class="o">=</span> <span class="n">ntorch</span><span class="p">.</span><span class="nf">zeros</span><span class="p">(</span><span class="nf">dict</span><span class="p">(</span><span class="n">batch</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="n">Sigma</span><span class="p">.</span><span class="n">values</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">tensor</span><span class="p">([[</span><span class="mf">1.</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]])</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">dist</span> <span class="o">=</span> <span class="n">ndistributions</span><span class="p">.</span><span class="nc">MultivariateNormal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">Sigma</span><span class="p">)</span></code></pre></figure>
+
+<p>We’ve overridden the shape calls to give us named output now and sample takes in
+a dict. Should be a bit more clear.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">dist</span><span class="p">.</span><span class="n">batch_shape</span><span class="p">,</span> <span class="n">dist</span><span class="p">.</span><span class="n">event_shape</span></code></pre></figure>
+
+<div class="language-plaintext output_data_text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(OrderedDict([('dist', 10)]), OrderedDict([('out', 2)]))
+</code></pre></div></div>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">samples</span> <span class="o">=</span> <span class="n">dist</span><span class="p">.</span><span class="nf">sample</span><span class="p">(</span><span class="n">sample1</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">sample2</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+<span class="n">samples</span><span class="p">.</span><span class="n">shape</span></code></pre></figure>
+
+<div class="language-plaintext output_data_text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>OrderedDict([('sample1', 20), ('sample2', 30), ('dist', 10), ('out', 2)])
+</code></pre></div></div>
+
+<p>Everything is the same as before, except that the distribution propagates our
+dimension labels through to the end. This really comes in handy when you want to
+do some plots. Here was enumerate over the samples from each distribution and
+plot the samples.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">samples</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="sh">"</span><span class="s">dist</span><span class="sh">"</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+    <span class="n">plt</span><span class="p">.</span><span class="nf">scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">b</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="sh">"</span><span class="s">out</span><span class="sh">"</span><span class="p">,</span> <span class="mi">0</span><span class="p">).</span><span class="n">values</span><span class="p">.</span><span class="nf">numpy</span><span class="p">(),</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">b</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="sh">"</span><span class="s">out</span><span class="sh">"</span><span class="p">,</span> <span class="mi">1</span><span class="p">).</span><span class="n">values</span><span class="p">.</span><span class="nf">numpy</span><span class="p">())</span></code></pre></figure>
+
+<p><img src="/images/namedtensor2_50_0.png" alt="png" /></p>
+
+<h1 id="experiments-on-canonical-models">Experiments on Canonical Models</h1>
+
+<p>Now the question is whether this approach can actually be applied to real deep
+learning problems. To test this, I went through several of the key deep learning
+mini-models to see what the code looks like. Honestly, I am not sure I am
+completely convinced… it looks like a start, but maybe not completely there.</p>
+
+<h2 id="mnist">MNist</h2>
+
+<p>The first example comes from a simple MNist network that is shipped with
+PyTorch. The full original example is available at <a href="https://github.com/pytorch/examples/blob/master/mnist/main.py">MNist
+example</a> and our
+named example is available <a href="https://github.com/harvardnlp/n
+amedtensor/blob/master/examples/mnist.py">named MNist example</a>. Here we compare two variants, one
+with standard tensor and the other with named tensor.</p>
+
+<p><img src="http://deeplearning.net/tutorial/_images/mylenet.png" /></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">BaseNet</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="nf">super</span><span class="p">(</span><span class="n">BaseNet</span><span class="p">,</span> <span class="n">self</span><span class="p">).</span><span class="nf">__init__</span><span class="p">()</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">fc1</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Linear</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="mi">4</span><span class="o">*</span><span class="mi">50</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">fc2</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Linear</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span></code></pre></figure>
+
+<p>The standard implementation is here. The code is pretty clean, it is a straight
+line of applying modules one after the other. The dimensions mostly line up
+along the way, but perhaps that was decided because this is the most standard
+example.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">StandardCNN</span><span class="p">(</span><span class="n">BaseNet</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="c1"># batch x c x h x w
+</span>        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="p">.</span><span class="nf">relu</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="nf">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="c1"># batch x c1 x h1 x w1
+</span>        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="p">.</span><span class="nf">max_pool2d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="c1"># batch x c1 x h1a x w1a
+</span>        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="p">.</span><span class="nf">relu</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="nf">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="c1"># batch x c2 x h2 x w2
+</span>        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="p">.</span><span class="nf">max_pool2d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="c1"># batch x c2a x h2a x w2a
+</span>        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">.</span><span class="nf">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="o">*</span><span class="mi">4</span><span class="o">*</span><span class="mi">50</span><span class="p">)</span>
+        <span class="c1"># batch x fc1
+</span>        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="p">.</span><span class="nf">relu</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="nf">fc1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="c1"># batch x fc2
+</span>        <span class="n">x</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="nf">fc2</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="c1"># batch x classes
+</span>        <span class="k">return</span> <span class="n">F</span><span class="p">.</span><span class="nf">log_softmax</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></code></pre></figure>
+
+<p>Next consider the named version. The code is not necessarily more concise.
+However it does have some useful differences. Notably</p>
+
+<ul>
+  <li>
+    <p>The <code class="language-plaintext highlighter-rouge">op</code> will check that changed dimensions get updated along the way, so it
+is harder to screw up transposes.</p>
+  </li>
+  <li>
+    <p>Names are in the code, so debugging gives better errors. Furthermore we can
+add checks like the <code class="language-plaintext highlighter-rouge">assert_size</code>.</p>
+  </li>
+  <li>
+    <p>The transpose, view and softmax become nicer in the process.</p>
+  </li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">NamedNet</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">pool</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">F</span><span class="p">.</span><span class="nf">max_pool2d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="nf">return </span><span class="p">(</span>
+            <span class="n">x</span><span class="p">.</span><span class="nf">transpose</span><span class="p">(</span><span class="sh">"</span><span class="s">c</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">h</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">w</span><span class="sh">"</span><span class="p">)</span>
+            <span class="p">.</span><span class="nf">op</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">conv1</span><span class="p">,</span> <span class="n">F</span><span class="p">.</span><span class="n">relu</span><span class="p">)</span>
+            <span class="p">.</span><span class="nf">assert_size</span><span class="p">(</span><span class="n">c2</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span> <span class="c1"># Just for fun.
+</span>            <span class="p">.</span><span class="nf">op</span><span class="p">(</span><span class="n">pool</span><span class="p">)</span>
+            <span class="p">.</span><span class="nf">op</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">conv2</span><span class="p">,</span> <span class="n">F</span><span class="p">.</span><span class="n">relu</span><span class="p">)</span>
+            <span class="p">.</span><span class="nf">assert_size</span><span class="p">(</span><span class="n">c</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+            <span class="p">.</span><span class="nf">op</span><span class="p">(</span><span class="n">pool</span><span class="p">)</span>
+            <span class="p">.</span><span class="nf">stack</span><span class="p">(</span><span class="n">fc</span><span class="o">=</span><span class="p">(</span><span class="sh">"</span><span class="s">c</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">h</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">w</span><span class="sh">"</span><span class="p">))</span>
+            <span class="p">.</span><span class="nf">op</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">fc1</span><span class="p">,</span> <span class="n">F</span><span class="p">.</span><span class="n">relu</span><span class="p">)</span>
+            <span class="p">.</span><span class="nf">op</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">fc2</span><span class="p">,</span> <span class="n">classes</span><span class="o">=</span><span class="sh">"</span><span class="s">fc</span><span class="sh">"</span><span class="p">)</span>
+            <span class="p">.</span><span class="nf">log_softmax</span><span class="p">(</span><span class="sh">"</span><span class="s">classes</span><span class="sh">"</span><span class="p">)</span>
+        <span class="p">)</span></code></pre></figure>
+
+<p>The full implementation uses other aspects of the reduction for the loss and
+backpropagation.</p>
+
+<h2 id="text-classification">Text Classification</h2>
+
+<p>The next example is a standard text classification CNN problem . This example is
+based on the model from Yoon Kim (2014) in <a href="https://arxiv.org/abs/1408.5882">Convolutional Neural Networks for
+Sentence Classification</a>.</p>
+
+<p><img src="http://www.wildml.com/wp-content/uploads/2015/11/Screen-Shot-2015-11-06-at-8.03.47-AM.png" /></p>
+
+<p>This is a fun model because it is quite simple and relatively effective (with
+word embeddings). Notably it was surprisingly annoying to implement in 2015, but
+nowadays it is just a couple of lines of code. I borrowed the implementation of
+<a href="https://github.com/junwang4/CNN-sentence-classification-pytorch-2018">Jun Wang</a>
+and updated it for a <a href="https://github.com/harvardnlp/namedt
+ensor/blob/master/examples/cnn_kim.py">named tensor version</a>. Both use the same set of parameters.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">BaseCNN</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+        <span class="n">self</span><span class="p">,</span>
+        <span class="n">kernel_sizes</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
+        <span class="n">num_filters</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">embedding_dim</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
+        <span class="n">pretrained_embeddings</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nf">super</span><span class="p">(</span><span class="n">BaseCNN</span><span class="p">,</span> <span class="n">self</span><span class="p">).</span><span class="nf">__init__</span><span class="p">()</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">kernel_sizes</span> <span class="o">=</span> <span class="n">kernel_sizes</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">embedding</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Embedding</span><span class="p">(</span><span class="n">vocab_size</span><span class="p">,</span> <span class="n">embedding_dim</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">embedding</span><span class="p">.</span><span class="n">weight</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="nf">copy_</span><span class="p">(</span>
+            <span class="n">torch</span><span class="p">.</span><span class="nf">from_numpy</span><span class="p">(</span><span class="n">pretrained_embeddings</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">conv_blocks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">kernel_size</span> <span class="ow">in</span> <span class="n">kernel_sizes</span><span class="p">:</span>
+            <span class="n">conv1d</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Conv1d</span><span class="p">(</span>
+                <span class="n">in_channels</span><span class="o">=</span><span class="n">embedding_dim</span><span class="p">,</span>
+                <span class="n">out_channels</span><span class="o">=</span><span class="n">num_filters</span><span class="p">,</span>
+                <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span>
+                <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="n">conv_blocks</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">conv1d</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">conv_blocks</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">ModuleList</span><span class="p">(</span><span class="n">conv_blocks</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Linear</span><span class="p">(</span><span class="n">num_filters</span> <span class="o">*</span> <span class="nf">len</span><span class="p">(</span><span class="n">kernel_sizes</span><span class="p">),</span> <span class="n">num_classes</span><span class="p">)</span></code></pre></figure>
+
+<p>Here is the standard implementation. Even though this code looks simple, it has
+all the notable traps including a transpose, cat, view and softmax.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">StandardCNN</span><span class="p">(</span><span class="n">BaseCNN</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>       <span class="c1"># x: (batch, sentence_len)
+</span>        <span class="n">x</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="nf">embedding</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>   <span class="c1"># embedded x: (batch, sentence_len, embedding_dim)
+</span>
+
+        <span class="c1">#    input:  (batch, in_channel=1, in_length=sentence_len*embedding_dim),
+</span>        <span class="c1">#    output: (batch, out_channel=num_filters, out_length=sentence_len-...)
+</span>        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">.</span><span class="nf">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># needs to convert x to (batch, embedding_dim, sentence_len)
+</span>
+        <span class="n">x_list</span><span class="o">=</span> <span class="p">[</span><span class="n">F</span><span class="p">.</span><span class="nf">relu</span><span class="p">(</span><span class="nf">conv_block</span><span class="p">(</span><span class="n">x</span><span class="p">)).</span><span class="nf">max</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                 <span class="k">for</span> <span class="n">conv_block</span> <span class="ow">in</span> <span class="n">self</span><span class="p">.</span><span class="n">conv_blocks</span><span class="p">]</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">cat</span><span class="p">(</span><span class="n">x_list</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="p">.</span><span class="nf">view</span><span class="p">(</span><span class="n">out</span><span class="p">.</span><span class="nf">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">feature_extracted</span> <span class="o">=</span> <span class="n">out</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">F</span><span class="p">.</span><span class="nf">dropout</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">self</span><span class="p">.</span><span class="n">training</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">F</span><span class="p">.</span><span class="nf">softmax</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="nf">fc</span><span class="p">(</span><span class="n">out</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">feature_extracted</span></code></pre></figure>
+
+<p>Contrast this with the named version. We need to use <code class="language-plaintext highlighter-rouge">augment</code> to handle the
+extra embedding dimension and
+add several ops. However as a benefit we get to use names for the transpose,
+cat, view and softmax.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">NamedCNN</span><span class="p">(</span><span class="n">BaseCNN</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>  <span class="c1"># x: (batch, slen)
+</span>        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">.</span><span class="nf">augment</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">embedding</span><span class="p">,</span> <span class="sh">"</span><span class="s">h</span><span class="sh">"</span><span class="p">)</span> \
+             <span class="p">.</span><span class="nf">transpose</span><span class="p">(</span><span class="sh">"</span><span class="s">h</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">slen</span><span class="sh">"</span><span class="p">)</span>
+
+        <span class="n">x_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">.</span><span class="nf">op</span><span class="p">(</span><span class="n">conv_block</span><span class="p">,</span> <span class="n">F</span><span class="p">.</span><span class="n">relu</span><span class="p">).</span><span class="nf">max</span><span class="p">(</span><span class="sh">"</span><span class="s">slen</span><span class="sh">"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                 <span class="k">for</span> <span class="n">conv_block</span> <span class="ow">in</span> <span class="n">self</span><span class="p">.</span><span class="n">conv_blocks</span><span class="p">]</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">ntorch</span><span class="p">.</span><span class="nf">cat</span><span class="p">(</span><span class="n">x_list</span><span class="p">,</span> <span class="sh">"</span><span class="s">h</span><span class="sh">"</span><span class="p">)</span>
+
+        <span class="n">feature_extracted</span> <span class="o">=</span> <span class="n">out</span>
+        <span class="n">drop</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">F</span><span class="p">.</span><span class="nf">dropout</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">self</span><span class="p">.</span><span class="n">training</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="p">.</span><span class="nf">op</span><span class="p">(</span><span class="n">drop</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">fc</span><span class="p">,</span> <span class="n">classes</span><span class="o">=</span><span class="sh">"</span><span class="s">h</span><span class="sh">"</span><span class="p">)</span> \
+                 <span class="p">.</span><span class="nf">softmax</span><span class="p">(</span><span class="sh">"</span><span class="s">classes</span><span class="sh">"</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">out</span><span class="p">,</span> <span class="n">feature_extracted</span></code></pre></figure>
+
+<h2 id="vae">VAE</h2>
+
+<p>Finally let’s consider a variational autoencoder (VAE). The version we look at
+is in its simplest form with a feed-forward encoder and decoder. This example is
+taken from the  <a href="https://github.com/pytorch/examples/blob/master/vae/main.py">torch
+examples</a> VAE and
+updated to a <a href="https://github.com/harvardnlp/namedtensor/blob/master/examples/vae.py">named
+vae</a>.</p>
+
+<p>This example is to mainly show off the use of named distributions as a way
+propagating forward dimensions.</p>
+
+<p><img src="http://ijdykeman.github.io/assets/cvae_figures/vae_diagram.svg" /></p>
+
+<p>(diagram from <a href="http://ijdykeman.github.io/ml/2016/12/21/cvae.html">Isaac
+Dykeman’s VAE explainer</a>)</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">BaseVAE</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">):</span>
+        <span class="nf">super</span><span class="p">(</span><span class="n">BaseVAE</span><span class="p">,</span> <span class="n">self</span><span class="p">).</span><span class="nf">__init__</span><span class="p">()</span>
+
+        <span class="n">self</span><span class="p">.</span><span class="n">fc1</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Linear</span><span class="p">(</span><span class="mi">784</span><span class="p">,</span> <span class="mi">400</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">fc21</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Linear</span><span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">fc22</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Linear</span><span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">fc3</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Linear</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">400</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">fc4</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="nc">Linear</span><span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="mi">784</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">num_samples</span> <span class="o">=</span> <span class="n">num_samples</span></code></pre></figure>
+
+<p>Original code, using distributions for the latent space.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">StandardVAE</span><span class="p">(</span><span class="n">BaseVAE</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">h1</span> <span class="o">=</span> <span class="n">F</span><span class="p">.</span><span class="nf">relu</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="nf">fc1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="nf">fc21</span><span class="p">(</span><span class="n">h1</span><span class="p">),</span> <span class="n">self</span><span class="p">.</span><span class="nf">fc22</span><span class="p">(</span><span class="n">h1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">reparameterize</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">logvar</span><span class="p">):</span>
+        <span class="n">normal</span> <span class="o">=</span> <span class="n">distributions</span><span class="p">.</span><span class="nc">Normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">logvar</span><span class="p">.</span><span class="nf">mul</span><span class="p">(</span><span class="mf">0.5</span><span class="p">).</span><span class="nf">exp</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">normal</span><span class="p">.</span><span class="nf">rsample</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="nc">Size</span><span class="p">([</span><span class="n">self</span><span class="p">.</span><span class="n">num_samples</span><span class="p">])),</span> <span class="n">normal</span>
+
+    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="n">h3</span> <span class="o">=</span> <span class="n">F</span><span class="p">.</span><span class="nf">relu</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="nf">fc3</span><span class="p">(</span><span class="n">z</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="p">.</span><span class="nf">sigmoid</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="nf">fc4</span><span class="p">(</span><span class="n">h3</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">mu</span><span class="p">,</span> <span class="n">logvar</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="nf">encode</span><span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="nf">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">784</span><span class="p">))</span>
+        <span class="n">z</span><span class="p">,</span> <span class="n">normal</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="nf">reparameterize</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">logvar</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="nf">decode</span><span class="p">(</span><span class="n">z</span><span class="p">),</span> <span class="n">normal</span></code></pre></figure>
+
+<p>Named version. Relatively similar except using named distributions as above to
+propagate named dimensions through sampling. This can be particularly useful
+when using multiple samples to backpropagate.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">NamedVAE</span><span class="p">(</span><span class="n">BaseVAE</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">h1</span> <span class="o">=</span> <span class="n">x</span><span class="p">.</span><span class="nf">op</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">fc1</span><span class="p">,</span> <span class="n">F</span><span class="p">.</span><span class="n">relu</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">h1</span><span class="p">.</span><span class="nf">op</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">fc21</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">),</span> <span class="n">h1</span><span class="p">.</span><span class="nf">op</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">fc22</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="sh">"</span><span class="s">x</span><span class="sh">"</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">reparameterize</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">logvar</span><span class="p">):</span>
+        <span class="n">normal</span> <span class="o">=</span> <span class="n">ndistributions</span><span class="p">.</span><span class="nc">Normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">logvar</span><span class="p">.</span><span class="nf">mul</span><span class="p">(</span><span class="mf">0.5</span><span class="p">).</span><span class="nf">exp</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">normal</span><span class="p">.</span><span class="nf">rsample</span><span class="p">(</span><span class="n">samples</span><span class="o">=</span><span class="n">self</span><span class="p">.</span><span class="n">num_samples</span><span class="p">),</span> <span class="n">normal</span>
+
+    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">z</span><span class="p">.</span><span class="nf">op</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">fc3</span><span class="p">,</span> <span class="n">F</span><span class="p">.</span><span class="n">relu</span><span class="p">).</span><span class="nf">op</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">fc4</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="sh">"</span><span class="s">z</span><span class="sh">"</span><span class="p">).</span><span class="nf">sigmoid</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">mu</span><span class="p">,</span> <span class="n">logvar</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="nf">encode</span><span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="nf">stack</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">(</span><span class="sh">"</span><span class="s">ch</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">height</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">width</span><span class="sh">"</span><span class="p">)))</span>
+        <span class="n">z</span><span class="p">,</span> <span class="n">normal</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="nf">reparameterize</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">logvar</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="nf">decode</span><span class="p">(</span><span class="n">z</span><span class="p">),</span> <span class="n">normal</span></code></pre></figure>
+
+<h1 id="next-steps">Next Steps</h1>
+
+<p>There was a lot of excellent feedback from the previous post, happy to hear
+other ideas or pointers to other approaches. I feel like personally this is
+getting close to a syntax that I would feel comfortable using. However, the
+chain function call / pseudo-monad style can be a bit off-putting to people, so
+it is possibly a non-starter.</p>
+
+<p>Please let me know on twitter at @harvardnlp or by filing an issue at
+https://github.com/harvardnlp/namedtensor .</p>
+
+<p><em>Sorry if there are tacky ads down here :(. Disqus seems to do it automatically.</em></p>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO
+INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT:
+https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL
+variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your
+page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://harvard-nlp.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>
+  <p>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by
+Disqus.</a>&lt;/noscript&gt;</p>
+
+  <div id="disqus_thread"></div>
+  <script>
+    /**
+     *  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION
+BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+     *  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT:
+https://disqus.com/admin/universalcode/#configuration-variables
+     */
+    /*
+    var disqus_config = function () {
+        this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's
+canonical URL variable
+        this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with
+your page's unique identifier variable
+    };
+    */
+    (function() {  // REQUIRED CONFIGURATION VARIABLE: EDIT THE SHORTNAME BELOW
+        var d = document, s = d.createElement('script');
+
+        s.src = 'https://EXAMPLE.disqus.com/embed.js';  // IMPORTANT: Replace
+EXAMPLE with your forum shortname!
+
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+  <noscript>
+    <p>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>&lt;/noscript&gt;</p>
+  </noscript>
+</noscript>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading"></h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li></li>
+          <li>Contact at: <a href="mailto:ddooley2@vols.utk.edu">ddooley2@vols.utk.edu</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/ddooley2"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">ddooley2</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p></p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

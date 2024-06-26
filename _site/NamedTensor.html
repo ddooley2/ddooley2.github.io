@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Tensor Considered Harmful</title>
+  <meta name="description" content="Named tensors for better deep learning code.">
+
+  <meta name="og:image" href="http://nlp.seas.harvard.edu/SEAS.png" />
+
+<link rel="icon" type="image/png" href="/logos/tnlogo.png" />
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://localhost:4000/NamedTensor.html">
+  <link rel="alternate" type="application/rss+xml" title="" href="http://localhost:4000/feed.xml">
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<!-- Latest compiled and minified CSS -->
+  <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+  tex2jax: {
+  inlineMath: [['$','$'], ['\\(','\\)']],
+  processEscapes: true
+  }
+  });
+  </script>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-116932893-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'UA-116932893-1');
+  </script>
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+
+<script src="/bib-list.js"></script>
+
+<link rel="stylesheet" href="/bib-publication-list.css" type="text/css" />
+
+
+<!-- Optional theme -->
+<!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous"> -->
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <span><img width="50px" style="padding:5px" src="/logos/tnlogo.png"></span>
+
+    <span>
+        <!-- <a class="site-title" href="/"></a> -->
+
+    </span>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+        
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          <a class="page-link" href="/">Main</a>
+          
+          
+          
+          <a class="page-link" href="/papers/">Publications</a>
+          
+          
+          
+          <a class="page-link" href="/rawpapers/"></a>
+          
+          
+        <!-- <a class="page-link" href="http://blog.rush-nlp.com">Blog</a> -->
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post">
+
+
+
+  <div class="post-content">
+    <p><em>Alexander Rush</em> - @harvardnlp</p>
+
+<p><a href="https://colab.research.google.com/github/harvardnlp/namedtensor/blob/master/notebooks/NamedTensor.ipynb" target="_parent">
+    <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" />
+</a></p>
+
+<p><i>
+TL;DR: Despite its ubiquity in deep learning, Tensor is broken. It forces bad
+habits such as exposing private dimensions, broadcasting based on absolute
+position,  and keeping type information in documentation.  This post presents a
+proof-of-concept of an alternative approach, <strong>named tensors</strong>, with named
+dimensions. This change eliminates the need for indexing, dim arguments, einsum-
+style unpacking, and documentation-based coding. The prototype <strong>PyTorch
+library</strong> accompanying this blog post is available as
+<a href="https://github.com/harvardnlp/NamedTensor">namedtensor</a>.
+</i></p>
+
+<ul id="markdown-toc">
+  <li><a href="#tensor-traps" id="markdown-toc-tensor-traps">Tensor Traps</a>    <ul>
+      <li><a href="#trap-1-privacy-by-convention" id="markdown-toc-trap-1-privacy-by-convention">Trap 1: Privacy by Convention</a></li>
+      <li><a href="#trap-2-broadcasting-by-alignment" id="markdown-toc-trap-2-broadcasting-by-alignment">Trap 2: Broadcasting by Alignment</a></li>
+      <li><a href="#trap-3-access-by-comments" id="markdown-toc-trap-3-access-by-comments">Trap 3: Access by Comments</a></li>
+    </ul>
+  </li>
+  <li><a href="#named-tensor-a-prototype" id="markdown-toc-named-tensor-a-prototype">Named Tensor: A Prototype</a>    <ul>
+      <li><a href="#proposal-1-assigning-names" id="markdown-toc-proposal-1-assigning-names">Proposal 1: Assigning Names</a></li>
+      <li><a href="#proposal-2-accessors-and-reduction" id="markdown-toc-proposal-2-accessors-and-reduction">Proposal 2: Accessors and Reduction</a></li>
+      <li><a href="#proposal-3-broadcasting-and-contraction" id="markdown-toc-proposal-3-broadcasting-and-contraction">Proposal 3: Broadcasting and Contraction</a></li>
+      <li><a href="#proposal-4-shifting-dimensions" id="markdown-toc-proposal-4-shifting-dimensions">Proposal 4: Shifting Dimensions</a></li>
+      <li><a href="#proposal-5-ban-indexing" id="markdown-toc-proposal-5-ban-indexing">Proposal 5: Ban Indexing</a></li>
+      <li><a href="#proposal-6-private-dimensions" id="markdown-toc-proposal-6-private-dimensions">Proposal 6: Private Dimensions</a></li>
+    </ul>
+  </li>
+  <li><a href="#example-neural-attention" id="markdown-toc-example-neural-attention">Example: Neural Attention</a></li>
+  <li><a href="#conclusion--request-for-help" id="markdown-toc-conclusion--request-for-help">Conclusion / Request for Help</a></li>
+</ul>
+
+<p><em>Changelog</em></p>
+<ul>
+  <li>See <a href="http://nlp.seas.harvard.edu/NamedTensor2">Part 2</a> as well.</li>
+  <li>Updated the syntax of the prototype to be a subest of xarray whereever
+possible.</li>
+  <li>Dropped the einops style string DSL notation to be more explicit.</li>
+</ul>
+
+<p><em>Implementations</em></p>
+<ul>
+  <li>Jon Malmaud points out that the <a href="http://xarray.pydata.org/en/stable/">xarray</a>
+project has very similar goals as this note with the addition of extensive
+Pandas and scientific computing support.</li>
+  <li>Tongfei Chen’s <a href="https://github.com/ctongfei/nexus">Nexus</a> project proposes
+statically type-safe tensors in Scala.</li>
+  <li>Stephan Hoyer and Eric Christiansen have a labeled tensor library for
+Tensorflow that is the same as this appraoch. <a href="https://github.com/
+tensorflow/tensorflow/tree/master/tensorflow/contrib/labeled_tensor">Labed Tensor</a></li>
+  <li>Nishant Sinha has a <a href="https://towardsdatascience.com/introducing-
+tensor-shape-annotation-library-tsalib-963b5b13c35b">TSA library</a> that uses type annotations
+to define dimension names.</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#@title Setup
+#!rm -fr NamedTensor/; git clone -q https://github.com/harvardnlp/NamedTensor.git
+#!cd NamedTensor; pip install -q .; pip install -q torch numpy opt_einsum</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="n">numpy</span>
+<span class="kn">import</span> <span class="n">torch</span>
+<span class="kn">from</span> <span class="n">namedtensor</span> <span class="kn">import</span> <span class="n">NamedTensor</span><span class="p">,</span> <span class="n">ntorch</span>
+<span class="kn">from</span> <span class="n">namedtensor</span> <span class="kn">import</span> <span class="n">_im_init</span>
+<span class="nf">_im_init</span><span class="p">()</span></code></pre></figure>
+
+<h1 id="tensor-traps">Tensor Traps</h1>
+
+<p>This post is about the tensor class, a multi-dimensional array object that is
+the central object of deep learning frameworks such as Torch, TensorFlow and
+Chainer, as well as numpy. Tensors carry around a blob of storage and expose a
+tuple of dimension information to users.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">ims</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">tensor</span><span class="p">(</span><span class="n">numpy</span><span class="p">.</span><span class="nf">load</span><span class="p">(</span><span class="sh">'</span><span class="s">test_images.npy</span><span class="sh">'</span><span class="p">))</span>
+<span class="n">ims</span><span class="p">.</span><span class="n">shape</span></code></pre></figure>
+
+<div class="language-plaintext output_data_text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>torch.Size([6, 96, 96, 3])
+</code></pre></div></div>
+
+<p>Here there are 4 dimensions, corresponding to <em>batch_size</em>, <em>height</em>, <em>width</em>,
+and <em>channels</em>. Most of the time you can figure this out by some comment in the
+code that looks like this:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># batch_size x height x width x channels
+</span><span class="n">ims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_10_0.png" alt="png" /></p>
+
+<p>This approch is concise and pseudo-mathy. However from a programming point of
+view it is not a great way to build complex software.</p>
+
+<h2 id="trap-1-privacy-by-convention">Trap 1: Privacy by Convention</h2>
+
+<p>Code that manipulates tensors does so by dimension identifiers in the tuple. If
+you want to rotate the image you read the comment, decide what dimensions need
+to be changed and alter them.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">rotate</span><span class="p">(</span><span class="n">ims</span><span class="p">):</span>
+    <span class="c1"># batch_size x height x width x channels
+</span>    <span class="n">rotated</span> <span class="o">=</span> <span class="n">ims</span><span class="p">.</span><span class="nf">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># batch_size x width x height x channels
+</span>    <span class="k">return</span> <span class="n">rotated</span>
+<span class="nf">rotate</span><span class="p">(</span><span class="n">ims</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_14_0.png" alt="png" /></p>
+
+<p>This code is simple and in theory well documented. However, it does not reflect
+the semantics of the target function. The property of rotation is independent of
+the batch, or for that matter, the channels. The function should not have to
+account for these dimensions in determining the dimensions to alter.</p>
+
+<p>This leads to two problems. FIrst, it’s quite worrisome that if we pass in a
+singleton image this function runs fine but fails to work.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="nf">rotate</span><span class="p">(</span><span class="n">ims</span><span class="p">[</span><span class="mi">0</span><span class="p">]).</span><span class="n">shape</span></code></pre></figure>
+
+<div class="language-plaintext output_data_text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>torch.Size([96, 3, 96])
+</code></pre></div></div>
+
+<p>However, even more worrisome is that the function may actually use the batch
+dimensions by mistake and mix together properties of different images. This can
+lead to nasty bugs that would be easy to avoid if this dimension was hidden from
+the code.</p>
+
+<h2 id="trap-2-broadcasting-by-alignment">Trap 2: Broadcasting by Alignment</h2>
+
+<p>The most useful aspect of Tensors is that they can quickly do array operations
+without directly requiring for loops. For this to work dimensions need to be
+directly aligned so that they can be broadcasts. Again this is done by
+convention and code documentation that makes it “easy” to line up dimensions.
+For instance, let’s assume we want to apply a mask to the above image.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># height x width
+</span><span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">96</span><span class="p">,</span> <span class="mi">96</span><span class="p">]).</span><span class="nf">byte</span><span class="p">()</span>
+<span class="n">mask</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_20_0.png" alt="png" /></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">try</span><span class="p">:</span>
+    <span class="n">ims</span><span class="p">.</span><span class="nf">masked_fill</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="k">except</span> <span class="nb">RuntimeError</span><span class="p">:</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="sh">"</span><span class="s">Broadcasting fail %s %s</span><span class="sh">"</span><span class="o">%</span><span class="p">(</span><span class="n">mask</span><span class="p">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">ims</span><span class="p">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">error</span></code></pre></figure>
+
+<div class="language-plaintext output_data_text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>'Broadcasting fail torch.Size([96, 96]) torch.Size([6, 96, 96, 3])'
+</code></pre></div></div>
+
+<p>This fails because even though we knew that we were building a <em>height</em> and
+<em>width</em> shaped mask, the rules of broadcasting do not have the correct
+semantics. To make this work, you are encouraged to use either <code class="language-plaintext highlighter-rouge">view</code> or
+<code class="language-plaintext highlighter-rouge">squeeze</code> my least favorite functions.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># either
+</span><span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="p">.</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="c1"># or
+</span><span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="p">.</span><span class="nf">view</span><span class="p">(</span><span class="mi">96</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># height x width x channels
+</span><span class="n">ims</span><span class="p">.</span><span class="nf">masked_fill</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_23_0.png" alt="png" /></p>
+
+<p>Note we do not need to do this for the left-most dimensions so there is a bit of
+abstraction here.  However reading through real code, dozens of right side
+<code class="language-plaintext highlighter-rouge">view</code>s and <code class="language-plaintext highlighter-rouge">squeeze</code>s become completely unreadable.</p>
+
+<h2 id="trap-3-access-by-comments">Trap 3: Access by Comments</h2>
+
+<p>It is possible that you look at the top two issues and think that as long as you
+are careful, these issues will be caught by run time errors.
+However, even well used the combination of broadcasting and indexing can lead to
+problems that are very tough to catch.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">a</span> <span class="o">=</span> <span class="n">ims</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="nf">mean</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="c1"># height x width x 1
+</span>
+<span class="c1"># (Lots of code in between)
+#  .......................
+</span>
+<span class="c1"># Code comment explaining what should be happening.
+</span><span class="n">dim</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="n">ims</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="bp">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+
+<span class="c1"># (Or maybe should be a 2? or a 0?)
+</span><span class="n">index</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="n">ims</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="bp">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">b</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_27_0.png" alt="png" /></p>
+
+<p>Here we assume that the coder is trying to combine two tensor using both
+reduction operations and dimension indexing. (Honestly at this point I have
+forgotten what  the dimensions stand for).</p>
+
+<p>The main point though is that this code will run fine for whatever value dim is
+given. The comment here might descibe what is happening but the code itself
+doesn’t throw a run time error.</p>
+
+<h1 id="named-tensor-a-prototype">Named Tensor: A Prototype</h1>
+
+<p>Based on these issues, I think deep learning code should move to a better
+central object. There are several of these proposed. Here for fun, I will
+develop a new prototype. I have the following goals.</p>
+
+<p><em>1) Dimensions should have human-readable names.</em></p>
+
+<p><em>2) No function should have a dim argument.</em></p>
+
+<p><em>3) Broadcast should be by name matching.</em></p>
+
+<p><em>4) Transposition should be explicit.</em></p>
+
+<p><em>5) Ban dimension based indexing.</em></p>
+
+<p><em>6) Private dimensions should be protected.</em></p>
+
+<p>To experiment with these ideas I have built a library known as <code class="language-plaintext highlighter-rouge">NamedTensor</code>.
+Currently it is PyTorch specific, but in theory a similar idea could be used in
+other frameworks. The code is available at
+<a href="https://github.com/harvardnlp/namedtensor">github.com/harvardnlp/namedtensor</a>.</p>
+
+<h2 id="proposal-1-assigning-names">Proposal 1: Assigning Names</h2>
+
+<p>The core of the library is an object that wraps a tensor and provides names for
+each dimension. Here we simply wrap a given torch tensor with dimension names.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">named_ims</span> <span class="o">=</span> <span class="nc">NamedTensor</span><span class="p">(</span><span class="n">ims</span><span class="p">,</span> <span class="p">(</span><span class="sh">"</span><span class="s">batch</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">height</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">width</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">channels</span><span class="sh">"</span><span class="p">))</span>
+<span class="n">named_ims</span><span class="p">.</span><span class="n">shape</span></code></pre></figure>
+
+<div class="language-plaintext output_data_text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>OrderedDict([('batch', 6), ('height', 96), ('width', 96), ('channels', 3)])
+</code></pre></div></div>
+
+<p>Alternatively the library has wrappers for the pytorch constructors to turn them
+into named tensors.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">ex</span> <span class="o">=</span> <span class="n">ntorch</span><span class="p">.</span><span class="nf">randn</span><span class="p">(</span><span class="nf">dict</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span> <span class="n">channels</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
+<span class="n">ex</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_36_0.png" alt="png" /></p>
+
+<p>Most simple operations simply keep around the named tensor properties.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">ex</span><span class="p">.</span><span class="nf">log</span><span class="p">()</span>
+
+<span class="c1"># or
+</span>
+<span class="n">ntorch</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+
+<span class="bp">None</span></code></pre></figure>
+
+<h2 id="proposal-2-accessors-and-reduction">Proposal 2: Accessors and Reduction</h2>
+
+<p>The first benefit of names comes from the ability to replace the need for dim
+and axis style arguments entirely. For example, lets say we wanted to sort each
+column.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">sortex</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">ex</span><span class="p">.</span><span class="nf">sort</span><span class="p">(</span><span class="sh">"</span><span class="s">width</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">sortex</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_41_0.png" alt="png" /></p>
+
+<p>Another common operation is a <em>reduction</em>  where one or more dimensions is
+pooled out.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">named_ims</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="sh">"</span><span class="s">batch</span><span class="sh">"</span><span class="p">)</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_43_0.png" alt="png" /></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">named_ims</span><span class="p">.</span><span class="nf">mean</span><span class="p">((</span><span class="sh">"</span><span class="s">batch</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">channels</span><span class="sh">"</span><span class="p">))</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_44_0.png" alt="png" /></p>
+
+<h2 id="proposal-3-broadcasting-and-contraction">Proposal 3: Broadcasting and Contraction</h2>
+
+<p>The names that are provided also provide the basis for broadcasting operations.
+When there is a binary operations between two named tensors they first ensure
+that all dimension are matched in name and then apply standard broadcasting. To
+demonstrate let’s return to the masking example above. Here we simply declare
+the names of the dimensions of our mask, and ask the library to figure out the
+broadcasting.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">im</span> <span class="o">=</span> <span class="nc">NamedTensor</span><span class="p">(</span><span class="n">ims</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="sh">"</span><span class="s">height</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">width</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">channels</span><span class="sh">"</span><span class="p">))</span>
+<span class="n">im2</span> <span class="o">=</span> <span class="nc">NamedTensor</span><span class="p">(</span><span class="n">ims</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">(</span><span class="sh">"</span><span class="s">height</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">width</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">channels</span><span class="sh">"</span><span class="p">))</span>
+
+<span class="n">mask</span> <span class="o">=</span> <span class="nc">NamedTensor</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="nf">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">96</span><span class="p">,</span> <span class="mi">96</span><span class="p">]).</span><span class="nf">byte</span><span class="p">(),</span> <span class="p">(</span><span class="sh">"</span><span class="s">height</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">width</span><span class="sh">"</span><span class="p">))</span>
+<span class="n">im</span><span class="p">.</span><span class="nf">masked_fill</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_46_0.png" alt="png" /></p>
+
+<p>Similar operations can be used for standard matrix operations such as addition
+and multiplication.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">im</span> <span class="o">*</span> <span class="n">mask</span><span class="p">.</span><span class="nf">double</span><span class="p">()</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_48_0.png" alt="png" /></p>
+
+<p>A more general feature is the <code class="language-plaintext highlighter-rouge">dot</code> method for tensor contraction between name
+tensors. Tensor contraction, the machinery behind <code class="language-plaintext highlighter-rouge">einsum</code>, is an elegant way of
+thinking about generalizations of dot-products, matrix-vector products, matrix-
+matrix products, etc.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># Runs torch.einsum(ijk,ijk-&gt;jk, tensor1, tensor2)
+</span><span class="n">im</span><span class="p">.</span><span class="nf">dot</span><span class="p">(</span><span class="sh">"</span><span class="s">height</span><span class="sh">"</span><span class="p">,</span> <span class="n">im2</span><span class="p">).</span><span class="n">shape</span></code></pre></figure>
+
+<div class="language-plaintext output_data_text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>OrderedDict([('width', 96), ('channels', 3)])
+</code></pre></div></div>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># Runs torch.einsum(ijk,ijk-&gt;il, tensor1, tensor2)
+</span><span class="n">im</span><span class="p">.</span><span class="nf">dot</span><span class="p">(</span><span class="sh">"</span><span class="s">width</span><span class="sh">"</span><span class="p">,</span> <span class="n">im2</span><span class="p">).</span><span class="n">shape</span></code></pre></figure>
+
+<div class="language-plaintext output_data_text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>OrderedDict([('height', 96), ('channels', 3)])
+</code></pre></div></div>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># Runs torch.einsum(ijk,ijk-&gt;l, tensor1, tensor2)
+</span><span class="n">im</span><span class="p">.</span><span class="nf">dot</span><span class="p">((</span><span class="sh">"</span><span class="s">height</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">width</span><span class="sh">"</span><span class="p">),</span> <span class="n">im2</span><span class="p">).</span><span class="n">shape</span></code></pre></figure>
+
+<div class="language-plaintext output_data_text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>OrderedDict([('channels', 3)])
+</code></pre></div></div>
+
+<p>Similar notation can be used for sparse indexing (inspired by the
+<a href="https://pypi.org/project/einindex/">einindex</a> library). This is useful for
+embedding lookups and other sparse operations.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">pick</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="nc">NamedTensor</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="nf">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="p">[</span><span class="mi">50</span><span class="p">]).</span><span class="nf">long</span><span class="p">(),</span> <span class="p">(</span><span class="sh">"</span><span class="s">lookups</span><span class="sh">"</span><span class="p">,))</span> \
+             <span class="p">.</span><span class="nf">sort</span><span class="p">(</span><span class="sh">"</span><span class="s">lookups</span><span class="sh">"</span><span class="p">)</span>
+
+<span class="c1"># Select 50 random rows.
+</span><span class="n">im</span><span class="p">.</span><span class="nf">index_select</span><span class="p">(</span><span class="sh">"</span><span class="s">height</span><span class="sh">"</span><span class="p">,</span> <span class="n">pick</span><span class="p">)</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_54_0.png" alt="png" /></p>
+
+<h2 id="proposal-4-shifting-dimensions">Proposal 4: Shifting Dimensions</h2>
+
+<p>Behind the scenes all of the named tensors are acting as tensor objects. As such
+thing like order and stride of dimensions does matter. Operations like
+<code class="language-plaintext highlighter-rouge">transpose</code> and <code class="language-plaintext highlighter-rouge">view</code> are crucial for maintaining this, but are unfortunately
+quite error-prone.</p>
+
+<p>Instead consider a domain specific langauge <code class="language-plaintext highlighter-rouge">shift</code> that borrows heavily from
+the Alex Rogozhnikov’s excellent
+<a href="https://github.com/arogozhnikov/einops">einops</a> package.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">tensor</span> <span class="o">=</span> <span class="nc">NamedTensor</span><span class="p">(</span><span class="n">ims</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="sh">"</span><span class="s">h</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">w</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">c</span><span class="sh">"</span><span class="p">))</span>
+<span class="n">tensor</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_57_0.png" alt="png" /></p>
+
+<p>Standard calls to transpose dimensions.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">tensor</span><span class="p">.</span><span class="nf">transpose</span><span class="p">(</span><span class="sh">"</span><span class="s">w</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">h</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">c</span><span class="sh">"</span><span class="p">)</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_59_0.png" alt="png" /></p>
+
+<p>Calls for splitting and stacking together dimensions.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">tensor</span> <span class="o">=</span> <span class="nc">NamedTensor</span><span class="p">(</span><span class="n">ims</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="sh">"</span><span class="s">h</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">w</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">c</span><span class="sh">"</span><span class="p">))</span>
+<span class="n">tensor</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="p">(</span><span class="sh">"</span><span class="s">height</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">q</span><span class="sh">"</span><span class="p">),</span> <span class="n">height</span><span class="o">=</span><span class="mi">8</span><span class="p">).</span><span class="n">shape</span></code></pre></figure>
+
+<div class="language-plaintext output_data_text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>OrderedDict([('height', 8), ('q', 12), ('w', 96), ('c', 3)])
+</code></pre></div></div>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">tensor</span> <span class="o">=</span> <span class="nc">NamedTensor</span><span class="p">(</span><span class="n">ims</span><span class="p">,</span> <span class="p">(</span><span class="sh">'</span><span class="s">b</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">h</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">w</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">c</span><span class="sh">'</span><span class="p">))</span>
+<span class="n">tensor</span><span class="p">.</span><span class="nf">stack</span><span class="p">(</span><span class="n">bh</span> <span class="o">=</span> <span class="p">(</span><span class="sh">'</span><span class="s">b</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">h</span><span class="sh">'</span><span class="p">)).</span><span class="n">shape</span></code></pre></figure>
+
+<div class="language-plaintext output_data_text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>OrderedDict([('bh', 576), ('w', 96), ('c', 3)])
+</code></pre></div></div>
+
+<p>Ops can be chained.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">tensor</span><span class="p">.</span><span class="nf">stack</span><span class="p">(</span><span class="n">bw</span><span class="o">=</span><span class="p">(</span><span class="sh">'</span><span class="s">b</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">w</span><span class="sh">'</span><span class="p">)).</span><span class="nf">transpose</span><span class="p">(</span><span class="sh">'</span><span class="s">h</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">bw</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">c</span><span class="sh">'</span><span class="p">)</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_64_0.png" alt="png" /></p>
+
+<p>Just for fun, here are some of the crazier examples from <em>einops</em> in this
+notation.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">tensor</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="n">b</span><span class="o">=</span><span class="p">(</span><span class="sh">'</span><span class="s">b1</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">b2</span><span class="sh">'</span><span class="p">),</span> <span class="n">b1</span><span class="o">=</span><span class="mi">2</span><span class="p">).</span><span class="nf">stack</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">(</span><span class="sh">'</span><span class="s">b2</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">h</span><span class="sh">'</span><span class="p">),</span> <span class="n">d</span><span class="o">=</span><span class="p">(</span><span class="sh">'</span><span class="s">b1</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">w</span><span class="sh">'</span><span class="p">))</span>\
+      <span class="p">.</span><span class="nf">transpose</span><span class="p">(</span><span class="sh">'</span><span class="s">a</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">d</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">c</span><span class="sh">'</span><span class="p">)</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_66_0.png" alt="png" /></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">tensor</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="n">w</span><span class="o">=</span><span class="p">(</span><span class="sh">'</span><span class="s">w1</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">w2</span><span class="sh">'</span><span class="p">),</span> <span class="n">w2</span><span class="o">=</span><span class="mi">2</span><span class="p">).</span><span class="nf">stack</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">(</span><span class="sh">'</span><span class="s">h</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">w2</span><span class="sh">'</span><span class="p">),</span> <span class="n">d</span><span class="o">=</span><span class="p">(</span><span class="sh">'</span><span class="s">b</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">w1</span><span class="sh">'</span><span class="p">))</span>\
+      <span class="p">.</span><span class="nf">transpose</span><span class="p">(</span><span class="sh">'</span><span class="s">a</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">d</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">c</span><span class="sh">'</span><span class="p">)</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_67_0.png" alt="png" /></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">tensor</span><span class="p">.</span><span class="nf">stack</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">(</span><span class="sh">'</span><span class="s">b</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">w</span><span class="sh">'</span><span class="p">)).</span><span class="nf">transpose</span><span class="p">(</span><span class="sh">'</span><span class="s">h</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">a</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">c</span><span class="sh">'</span><span class="p">)</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_68_0.png" alt="png" /></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">tensor</span><span class="p">.</span><span class="nf">stack</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">(</span><span class="sh">'</span><span class="s">w</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">b</span><span class="sh">'</span><span class="p">)).</span><span class="nf">transpose</span><span class="p">(</span><span class="sh">'</span><span class="s">h</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">a</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">c</span><span class="sh">'</span><span class="p">)</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_69_0.png" alt="png" /></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">tensor</span> <span class="o">=</span> <span class="nc">NamedTensor</span><span class="p">(</span><span class="n">ims</span><span class="p">,</span> <span class="p">(</span><span class="sh">'</span><span class="s">b</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">h</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">w</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">c</span><span class="sh">'</span><span class="p">))</span>
+<span class="n">tensor</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="sh">'</span><span class="s">b</span><span class="sh">'</span><span class="p">)</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_70_0.png" alt="png" /></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">tensor</span> <span class="o">=</span> <span class="nc">NamedTensor</span><span class="p">(</span><span class="n">ims</span><span class="p">,</span> <span class="p">(</span><span class="sh">'</span><span class="s">b</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">h</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">w</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">c</span><span class="sh">'</span><span class="p">))</span>
+<span class="n">tensor</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="n">h</span> <span class="o">=</span> <span class="p">(</span><span class="sh">'</span><span class="s">h1</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">h2</span><span class="sh">'</span><span class="p">),</span> <span class="n">h2</span> <span class="o">=</span><span class="mi">2</span><span class="p">).</span><span class="nf">split</span><span class="p">(</span><span class="n">w</span> <span class="o">=</span> <span class="p">(</span><span class="sh">'</span><span class="s">w1</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">w2</span><span class="sh">'</span><span class="p">),</span> <span class="n">w2</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> \
+      <span class="p">.</span><span class="nf">mean</span><span class="p">((</span><span class="sh">'</span><span class="s">h2</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">w2</span><span class="sh">'</span><span class="p">)).</span><span class="nf">stack</span><span class="p">(</span><span class="n">bw</span><span class="o">=</span><span class="p">(</span><span class="sh">'</span><span class="s">b</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">w1</span><span class="sh">'</span><span class="p">))</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_71_0.png" alt="png" /></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">tensor</span> <span class="o">=</span> <span class="nc">NamedTensor</span><span class="p">(</span><span class="n">ims</span><span class="p">,</span> <span class="p">(</span><span class="sh">'</span><span class="s">b</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">h</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">w</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">c</span><span class="sh">'</span><span class="p">))</span>
+<span class="n">tensor</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="sh">'</span><span class="s">b1</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">b2</span><span class="sh">'</span><span class="p">),</span> <span class="n">b1</span> <span class="o">=</span> <span class="mi">2</span><span class="p">).</span><span class="nf">mean</span><span class="p">(</span><span class="sh">'</span><span class="s">c</span><span class="sh">'</span><span class="p">)</span> \
+      <span class="p">.</span><span class="nf">stack</span><span class="p">(</span><span class="n">bw</span><span class="o">=</span><span class="p">(</span><span class="sh">"</span><span class="s">b1</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">w</span><span class="sh">"</span><span class="p">),</span> <span class="n">bh</span><span class="o">=</span><span class="p">(</span><span class="sh">'</span><span class="s">b2</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">h</span><span class="sh">'</span><span class="p">)).</span><span class="nf">transpose</span><span class="p">(</span><span class="sh">'</span><span class="s">bh</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">bw</span><span class="sh">'</span><span class="p">)</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_72_0.png" alt="png" /></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">tensor</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="sh">'</span><span class="s">b1</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">b2</span><span class="sh">'</span><span class="p">),</span> <span class="n">b1</span><span class="o">=</span><span class="mi">2</span><span class="p">).</span><span class="nf">stack</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="p">(</span><span class="sh">'</span><span class="s">h</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">b1</span><span class="sh">'</span><span class="p">),</span> <span class="n">w</span><span class="o">=</span><span class="p">(</span><span class="sh">'</span><span class="s">w</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">b2</span><span class="sh">'</span><span class="p">))</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_73_0.png" alt="png" /></p>
+
+<h2 id="proposal-5-ban-indexing">Proposal 5: Ban Indexing</h2>
+
+<p>Generally indexing is discouraged in this named tensor paradigm. Instead use
+functions like <code class="language-plaintext highlighter-rouge">index_select</code> above.</p>
+
+<p>There are some useful named alternative functions pulled over from torch. For
+example <code class="language-plaintext highlighter-rouge">unbind</code> pulls apart a dimension to a tuple.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">tensor</span> <span class="o">=</span> <span class="nc">NamedTensor</span><span class="p">(</span><span class="n">ims</span><span class="p">,</span> <span class="p">(</span><span class="sh">'</span><span class="s">b</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">h</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">w</span><span class="sh">'</span><span class="p">,</span> <span class="sh">'</span><span class="s">c</span><span class="sh">'</span><span class="p">))</span>
+
+<span class="c1"># Returns a tuple
+</span><span class="n">images</span> <span class="o">=</span> <span class="n">tensor</span><span class="p">.</span><span class="nf">unbind</span><span class="p">(</span><span class="sh">"</span><span class="s">b</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">images</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_76_0.png" alt="png" /></p>
+
+<p>The function <code class="language-plaintext highlighter-rouge">get</code> directly selects a slice of from a named dimension.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># Returns a tuple
+</span><span class="n">images</span> <span class="o">=</span> <span class="n">tensor</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="sh">"</span><span class="s">b</span><span class="sh">"</span><span class="p">,</span> <span class="mi">0</span><span class="p">).</span><span class="nf">unbind</span><span class="p">(</span><span class="sh">"</span><span class="s">c</span><span class="sh">"</span><span class="p">)</span>
+<span class="n">images</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_78_0.png" alt="png" /></p>
+
+<p>Finally <code class="language-plaintext highlighter-rouge">narrow</code> can be used to replace fancy indexing. However you must give a
+new dim name (since it can no longer broadcast).</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">tensor</span><span class="p">.</span><span class="nf">narrow</span><span class="p">(</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="sh">'</span><span class="s">narowedheight</span><span class="sh">'</span><span class="p">).</span><span class="nf">get</span><span class="p">(</span><span class="sh">"</span><span class="s">b</span><span class="sh">"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></code></pre></figure>
+
+<p><img src="/images/namedtensor_80_0.png" alt="png" /></p>
+
+<h2 id="proposal-6-private-dimensions">Proposal 6: Private Dimensions</h2>
+
+<p>Finally named tensor attempts to let you directly hide dimensions that should
+not be accessed by internal functions. The function <code class="language-plaintext highlighter-rouge">mask_to</code> will keep around a
+left side mask that protects any earlier dimensions from manipulations by
+functions. The simplest example uses a mask to drop the <code class="language-plaintext highlighter-rouge">batch</code> dimension.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">bad_function</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="c1"># Accesses the private batch dimension
+</span>    <span class="k">return</span> <span class="n">x</span><span class="p">.</span><span class="nf">mean</span><span class="p">(</span><span class="sh">"</span><span class="s">batch</span><span class="sh">"</span><span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">ntorch</span><span class="p">.</span><span class="nf">randn</span><span class="p">(</span><span class="nf">dict</span><span class="p">(</span><span class="n">batch</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">100</span><span class="p">))</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">ntorch</span><span class="p">.</span><span class="nf">randn</span><span class="p">(</span><span class="nf">dict</span><span class="p">(</span><span class="n">batch</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">100</span><span class="p">))</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="nf">bad_function</span><span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="nf">mask_to</span><span class="p">(</span><span class="sh">"</span><span class="s">batch</span><span class="sh">"</span><span class="p">),</span> <span class="n">y</span><span class="p">)</span>
+<span class="k">except</span> <span class="nb">RuntimeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="sh">"</span><span class="s">Error received: </span><span class="sh">"</span> <span class="o">+</span> <span class="nf">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="n">error</span></code></pre></figure>
+
+<div class="language-plaintext output_data_text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>'Error received: Dimension batch is masked'
+</code></pre></div></div>
+
+<p>This is weak dynamic check and can be turned off by internal functions. In
+future versions, perhaps we can add function annotations to lift non-named
+functions to respect these properties.</p>
+
+<h1 id="example-neural-attention">Example: Neural Attention</h1>
+
+<p>To demonstrate why these choices lead to better encapsulation properties, let’s
+consider a real-world deep learning example.</p>
+
+<p>This example was proposed by my colleague Tim Rocktashel in the blog post
+describing einsum (https://rockt.github.io/2018/04/30/einsum). Tim’s code was
+proposed as a better alternative to raw PyTorch. While I agree that einsum is a
+step forward, it still falls into many of the traps described above.</p>
+
+<p>Consider the problem of neural attention, which requires computing,</p>
+
+\[\begin{align*}
+\mathbf{M}_t &amp;= \tanh(\mathbf{W}^y\mathbf{Y}+(\mathbf{W}^h\mathbf{h}_t+\mathbf{W
+}^r\mathbf{r}_{t-1})\otimes \mathbf{e}_L) &amp; \mathbf{M}_t &amp;\in\mathbb{R}^{k\times
+L}\\
+\alpha_t &amp;= \text{softmax}(\mathbf{w}^T\mathbf{M}_t)&amp;\alpha_t&amp;\in\mathbb{R}^L\\
+\mathbf{r}_t &amp;= \mathbf{Y}\alpha^T_t +
+\tanh(\mathbf{W}^t\mathbf{r}_{t-1})&amp;\mathbf{r}_t&amp;\in\mathbb{R}^k
+\end{align*}\]
+
+<p>First we setup the parameters.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">random_ntensors</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="n">tensors</span> <span class="o">=</span> <span class="p">[</span><span class="n">ntorch</span><span class="p">.</span><span class="nf">randn</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="n">requires_grad</span><span class="p">)</span>
+               <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nf">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">num</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">tensors</span>
+
+<span class="k">class</span> <span class="nc">Param</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">in_hid</span><span class="p">,</span> <span class="n">out_hid</span><span class="p">):</span>
+        <span class="n">torch</span><span class="p">.</span><span class="nf">manual_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">WY</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">Wh</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">Wr</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">Wt</span> <span class="o">=</span> \
+            <span class="nf">random_ntensors</span><span class="p">(</span><span class="nf">dict</span><span class="p">(</span><span class="n">inhid</span><span class="o">=</span><span class="n">in_hid</span><span class="p">,</span> <span class="n">outhid</span><span class="o">=</span><span class="n">out_hid</span><span class="p">),</span>
+                            <span class="n">num</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">bM</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">br</span><span class="p">,</span> <span class="n">self</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> \
+            <span class="nf">random_ntensors</span><span class="p">(</span><span class="nf">dict</span><span class="p">(</span><span class="n">outhid</span><span class="o">=</span><span class="n">out_hid</span><span class="p">),</span>
+                            <span class="n">num</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                            <span class="n">requires_grad</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span></code></pre></figure>
+
+<p>Now consider the tensor-based einsum implementation of this function.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># Einsum Implementation
+</span><span class="kn">import</span> <span class="n">torch.nn.functional</span> <span class="k">as</span> <span class="n">F</span>
+<span class="k">def</span> <span class="nf">einsum_attn</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">ht</span><span class="p">,</span> <span class="n">rt1</span><span class="p">):</span>
+    <span class="c1"># -- [batch_size x hidden_dimension]
+</span>    <span class="n">tmp</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">einsum</span><span class="p">(</span><span class="sh">"</span><span class="s">ik,kl-&gt;il</span><span class="sh">"</span><span class="p">,</span> <span class="p">[</span><span class="n">ht</span><span class="p">,</span> <span class="n">params</span><span class="p">.</span><span class="n">Wh</span><span class="p">.</span><span class="n">values</span><span class="p">])</span> <span class="o">+</span> \
+          <span class="n">torch</span><span class="p">.</span><span class="nf">einsum</span><span class="p">(</span><span class="sh">"</span><span class="s">ik,kl-&gt;il</span><span class="sh">"</span><span class="p">,</span> <span class="p">[</span><span class="n">rt1</span><span class="p">,</span> <span class="n">params</span><span class="p">.</span><span class="n">Wr</span><span class="p">.</span><span class="n">values</span><span class="p">])</span>
+
+    <span class="n">Mt</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">tanh</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="nf">einsum</span><span class="p">(</span><span class="sh">"</span><span class="s">ijk,kl-&gt;ijl</span><span class="sh">"</span><span class="p">,</span> <span class="p">[</span><span class="n">Y</span><span class="p">,</span> <span class="n">params</span><span class="p">.</span><span class="n">WY</span><span class="p">.</span><span class="n">values</span><span class="p">])</span> <span class="o">+</span> \
+                <span class="n">tmp</span><span class="p">.</span><span class="nf">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="nf">expand_as</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span> <span class="o">+</span> <span class="n">params</span><span class="p">.</span><span class="n">bM</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="c1"># -- [batch_size x sequence_length]
+</span>    <span class="n">at</span> <span class="o">=</span> <span class="n">F</span><span class="p">.</span><span class="nf">softmax</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="nf">einsum</span><span class="p">(</span><span class="sh">"</span><span class="s">ijk,k-&gt;ij</span><span class="sh">"</span><span class="p">,</span> <span class="p">[</span><span class="n">Mt</span><span class="p">,</span> <span class="n">params</span><span class="p">.</span><span class="n">w</span><span class="p">.</span><span class="n">values</span><span class="p">]),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># -- [batch_size x hidden_dimension]
+</span>    <span class="n">rt</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">einsum</span><span class="p">(</span><span class="sh">"</span><span class="s">ijk,ij-&gt;ik</span><span class="sh">"</span><span class="p">,</span> <span class="p">[</span><span class="n">Y</span><span class="p">,</span> <span class="n">at</span><span class="p">])</span> <span class="o">+</span> \
+         <span class="n">torch</span><span class="p">.</span><span class="nf">tanh</span><span class="p">(</span><span class="n">torch</span><span class="p">.</span><span class="nf">einsum</span><span class="p">(</span><span class="sh">"</span><span class="s">ij,jk-&gt;ik</span><span class="sh">"</span><span class="p">,</span> <span class="p">[</span><span class="n">rt1</span><span class="p">,</span> <span class="n">params</span><span class="p">.</span><span class="n">Wt</span><span class="p">.</span><span class="n">values</span><span class="p">])</span> <span class="o">+</span>
+                    <span class="n">params</span><span class="p">.</span><span class="n">br</span><span class="p">.</span><span class="n">values</span><span class="p">)</span>
+
+    <span class="c1"># -- [batch_size x hidden_dimension], [batch_size x sequence_dimension]
+</span>    <span class="k">return</span> <span class="n">rt</span><span class="p">,</span> <span class="n">at</span></code></pre></figure>
+
+<p>This implementation is an improvement over the naive PyTorch implementation. It
+removes many of the
+views and transposes that would be necessary to make this work. <em>However, it
+still uses <code class="language-plaintext highlighter-rouge">squeeze</code>, references the private batch dim, and usees comments that
+are not enforced.</em></p>
+
+<p>Consider instead the <code class="language-plaintext highlighter-rouge">namedtensor</code> version:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">namedtensor_attn</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">ht</span><span class="p">,</span> <span class="n">rt1</span><span class="p">):</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">ht</span><span class="p">.</span><span class="nf">dot</span><span class="p">(</span><span class="sh">"</span><span class="s">inhid</span><span class="sh">"</span><span class="p">,</span> <span class="n">params</span><span class="p">.</span><span class="n">Wh</span><span class="p">)</span> <span class="o">+</span> <span class="n">rt1</span><span class="p">.</span><span class="nf">dot</span><span class="p">(</span><span class="sh">"</span><span class="s">inhid</span><span class="sh">"</span><span class="p">,</span> <span class="n">params</span><span class="p">.</span><span class="n">Wr</span><span class="p">)</span>
+    <span class="n">at</span> <span class="o">=</span> <span class="n">ntorch</span><span class="p">.</span><span class="nf">tanh</span><span class="p">(</span><span class="n">Y</span><span class="p">.</span><span class="nf">dot</span><span class="p">(</span><span class="sh">"</span><span class="s">inhid</span><span class="sh">"</span><span class="p">,</span> <span class="n">params</span><span class="p">.</span><span class="n">WY</span><span class="p">)</span> <span class="o">+</span> <span class="n">tmp</span> <span class="o">+</span> <span class="n">params</span><span class="p">.</span><span class="n">bM</span><span class="p">)</span> \
+         <span class="p">.</span><span class="nf">dot</span><span class="p">(</span><span class="sh">"</span><span class="s">outhid</span><span class="sh">"</span><span class="p">,</span> <span class="n">params</span><span class="p">.</span><span class="n">w</span><span class="p">)</span> \
+         <span class="p">.</span><span class="nf">softmax</span><span class="p">(</span><span class="sh">"</span><span class="s">seqlen</span><span class="sh">"</span><span class="p">)</span>
+
+    <span class="n">rt</span> <span class="o">=</span> <span class="n">Y</span><span class="p">.</span><span class="nf">dot</span><span class="p">(</span><span class="sh">"</span><span class="s">seqlen</span><span class="sh">"</span><span class="p">,</span> <span class="n">at</span><span class="p">).</span><span class="nf">stack</span><span class="p">(</span><span class="n">inhid</span><span class="o">=</span><span class="p">(</span><span class="sh">'</span><span class="s">outhid</span><span class="sh">'</span><span class="p">,))</span> <span class="o">+</span> \
+         <span class="n">ntorch</span><span class="p">.</span><span class="nf">tanh</span><span class="p">(</span><span class="n">rt1</span><span class="p">.</span><span class="nf">dot</span><span class="p">(</span><span class="sh">"</span><span class="s">inhid</span><span class="sh">"</span><span class="p">,</span> <span class="n">params</span><span class="p">.</span><span class="n">Wt</span><span class="p">)</span> <span class="o">+</span> <span class="n">params</span><span class="p">.</span><span class="n">br</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">rt</span><span class="p">,</span> <span class="n">at</span></code></pre></figure>
+
+<p>This code avoids all three traps.</p>
+
+<p>(Trap 1) The code never mentions the <code class="language-plaintext highlighter-rouge">batch</code> dim.</p>
+
+<p>(Trap 2) All broadcasting is done directly with contractions, there are no
+views.</p>
+
+<p>(Trap 3) Operations across dims are explicit. For instance, the softmax is
+clearly over the seqlen.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># Run Einsum
+</span><span class="n">in_hid</span> <span class="o">=</span> <span class="mi">7</span><span class="p">;</span> <span class="n">out_hid</span> <span class="o">=</span> <span class="mi">7</span>
+<span class="n">Y</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">randn</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">in_hid</span><span class="p">)</span>
+<span class="n">ht</span><span class="p">,</span> <span class="n">rt1</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="nf">randn</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">in_hid</span><span class="p">),</span> <span class="n">torch</span><span class="p">.</span><span class="nf">randn</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">in_hid</span><span class="p">)</span>
+<span class="n">params</span> <span class="o">=</span> <span class="nc">Param</span><span class="p">(</span><span class="n">in_hid</span><span class="p">,</span> <span class="n">out_hid</span><span class="p">)</span>
+<span class="n">r</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="nf">einsum_attn</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">ht</span><span class="p">,</span> <span class="n">rt1</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># Run Named Tensor (hiding batch)
+</span><span class="n">Y</span> <span class="o">=</span> <span class="nc">NamedTensor</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="p">(</span><span class="sh">"</span><span class="s">batch</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">seqlen</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">inhid</span><span class="sh">"</span><span class="p">),</span> <span class="n">mask</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">ht</span> <span class="o">=</span> <span class="nc">NamedTensor</span><span class="p">(</span><span class="n">ht</span><span class="p">,</span> <span class="p">(</span><span class="sh">"</span><span class="s">batch</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">inhid</span><span class="sh">"</span><span class="p">),</span> <span class="n">mask</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">rt1</span> <span class="o">=</span> <span class="nc">NamedTensor</span><span class="p">(</span><span class="n">rt1</span><span class="p">,</span> <span class="p">(</span><span class="sh">"</span><span class="s">batch</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">inhid</span><span class="sh">"</span><span class="p">),</span> <span class="n">mask</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">nr</span><span class="p">,</span> <span class="n">na</span> <span class="o">=</span> <span class="nf">namedtensor_attn</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">ht</span><span class="p">,</span> <span class="n">rt1</span><span class="p">)</span></code></pre></figure>
+
+<h1 id="conclusion--request-for-help">Conclusion / Request for Help</h1>
+
+<p>Tools for deep learning help researchers implement standard models, but they
+also impact what researchers try. Current models can be built fine with the
+tools we have, but the programming practices are not going to scale to new
+models.</p>
+
+<p>(For instance, one space we have been working on recently is discrete latent
+variable models which often have many problem specific variables each with their
+own variable dimension. This setting breaks the current tensor paradigm almost
+immediately. )</p>
+
+<p>This blog post is just a prototype of where this approach could go. If you are
+interested, I would love contributors to the build out this library properly.
+Some ideas if you want to send a PR to
+<a href="https://github.com/harvardnlp/NamedTensor">namedtensor</a>. Some ideas:</p>
+
+<p>1) <strong>Extending beyond PyTorch</strong>: Can we generalize this approach in a way that
+supports NumPy and Tensorflow?</p>
+
+<p>2) <strong>Interacting with PyTorch Modules</strong>: Can we “lift” PyTorch modules with type
+annotations, so that we know how they change inputs?</p>
+
+<p>3) <strong>Error Checking</strong>: Can we add annotations to functions giving pre- and post
+-conditions so that dimensions are automatically checked.</p>
+
+<p><em>Sorry if there are tacky ads down here :(. Disqus seems to do it automatically.</em></p>
+
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO
+INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT:
+https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL
+variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your
+page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://harvard-nlp.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+
+<noscript>
+  <p>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by
+Disqus.</a>&lt;/noscript&gt;</p>
+
+  <div id="disqus_thread"></div>
+  <script>
+    /**
+     *  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION
+BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+     *  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT:
+https://disqus.com/admin/universalcode/#configuration-variables
+     */
+    /*
+    var disqus_config = function () {
+        this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's
+canonical URL variable
+        this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with
+your page's unique identifier variable
+    };
+    */
+    (function() {  // REQUIRED CONFIGURATION VARIABLE: EDIT THE SHORTNAME BELOW
+        var d = document, s = d.createElement('script');
+
+        s.src = 'https://EXAMPLE.disqus.com/embed.js';  // IMPORTANT: Replace
+EXAMPLE with your forum shortname!
+
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+
+  <noscript>
+    <p>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>&lt;/noscript&gt;</p>
+  </noscript>
+</noscript>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading"></h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li></li>
+          <li>Contact at: <a href="mailto:ddooley2@vols.utk.edu">ddooley2@vols.utk.edu</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/ddooley2"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">ddooley2</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p></p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
