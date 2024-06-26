@@ -1,25 +1,28 @@
 notable: 
     - title: "CASPER: An Integrated Software Platform for Rapid Development of CRISPR Tools"
       authors : Brian Mendoza*, Tannery Fry*, <b>David Dooley*</b>, Josh Herman, and Cong Trinh (* = equal contribution)
-      pdf : papers/casper.pdf
+      pdf : /papers/casper.pdf
       journal: CRISPR Journal 
       image : /images/casper.jpg
+      id : as;dlfjal;sdjf
 
-    - title: Gene Coexpression Connectivity Predicts Gene Targets Underlying High Ionic-Liquid Tolerance in Yarrowia lipolytica
+    - title: Gene Coexpression Connectivity Predicts Gene Targets Underlying High Ionic-Liquid Tolerance in <i>Yarrowia lipolytica</i>
       authors : Caleb Walker, Seunghyun Ryu, Sergio Garcia, <b>David Dooley</b>, Brian Mendoza, and Cong Trinh
-      pdf : papers/IL_paper.pdf
+      pdf : /papers/IL_paper.pdf
       journal: mSystems
       image : 
+      id : aasdfj
 papers:
     - title: "CASPER: An Integrated Software Platform for Rapid Development of CRISPR Tools"
       authors : Brian Mendoza*, Tannery Fry*, <b>David Dooley*</b>, Josh Herman, and Cong Trinh (* = equal contribution)
-      pdf : papers/casper.pdf
+      pdf : /papers/casper.pdf
       journal: CRISPR Journal 
       image : /images/casper.jpg
+      id : as;dlfjal;sdjf
 
-    - title: Gene Coexpression Connectivity Predicts Gene Targets Underlying High Ionic-Liquid Tolerance in Yarrowia lipolytica
+    - title: Gene Coexpression Connectivity Predicts Gene Targets Underlying High Ionic-Liquid Tolerance in <i>Yarrowia lipolytica</i>
       authors : Caleb Walker, Seunghyun Ryu, Sergio Garcia, <b>David Dooley</b>, Brian Mendoza, and Cong Trinh
-      pdf : papers/IL_paper.pdf
+      pdf : /papers/IL_paper.pdf
       journal: mSystems
       image : 
-
+      id : aasdfj
