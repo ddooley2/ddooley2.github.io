@@ -1,13 +1,8 @@
 <header class="site-header">
 
   <div class="wrapper">
-
-    <span><img width="50px" style="padding:5px" src="/logos/tnlogo.png"></span>
-
-    <span>
-        <!-- <a class="site-title" href="{{ site.baseurl }}/">{{ site.title }}</a> -->
-
-    </span>
+      <span><a href="{{ site.baseurl }}/ "><img width="50px" style="padding:5px;vertical-align:middle;" src="/logos/tnlogo.png"> </a>
+    <a class="site-title" href="{{ site.baseurl }}/">{{ site.title }}</a></span>
 
     <nav class="site-nav">
       <a href="#" class="menu-icon">
@@ -17,16 +12,17 @@
           <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
         </svg>
       </a>
-
-      <div class="trigger">
-        {% assign sorted_pages = site.pages | sort:"weight" %}
-        {% for my_page in sorted_pages %}
-          {% if my_page.show %}
-          <a class="page-link" href="{{ my_page.url | prepend: site.baseurl }}">{{ my_page.title }}</a>
-          {% endif %}
-          {% endfor %}
-        <!-- <a class="page-link" href="http://blog.rush-nlp.com">Blog</a> -->
-      </div>
+<div class="trigger">
+  {% assign sorted_pages = site.pages | sort:"weight" %}
+  {% assign first_entry = true %}  {% for my_page in sorted_pages %}
+    {% if my_page.show %}
+      <a class="page-link" href="{{ my_page.url | prepend: site.baseurl }}">{{ my_page.title }}</a>
+      {% if first_entry %}
+          <a class="page-link" href="cv/cv.pdf">CV</a>
+            {% assign first_entry = false %}  {% endif %}
+    {% endif %}
+  {% endfor %}
+</div>
     </nav>
 
   </div>

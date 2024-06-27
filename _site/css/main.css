@@ -46,6 +46,17 @@ img {
   margin: 0 auto;
 }
 
+.img-rectangular img {
+  /*width: 200px;
+  height: 200px;*/
+  transition: transform 200ms ease-in-out;
+  transform-origin: center;
+}
+
+.img-rectangular:hover img {
+  transform: scale(1.2);
+}
+
 /**
  * Figures
  */
@@ -190,12 +201,12 @@ pre code {
 }
 
 .site-title {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 300;
   line-height: 56px;
   letter-spacing: -1px;
+  vertical-align: middle;
   margin-bottom: 0;
-  float: left;
 }
 .site-title, .site-title:visited {
   color: #424242;
