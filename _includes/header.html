@@ -18,7 +18,7 @@
     {% if my_page.show %}
       <a class="page-link" href="{{ my_page.url | prepend: site.baseurl }}">{{ my_page.title }}</a>
       {% if first_entry %}
-          <a class="page-link" href="cv/cv.pdf">CV</a>
+      <a class="page-link" href="{{site.baseurl}}/cv/cv.pdf">CV</a>
             {% assign first_entry = false %}  {% endif %}
     {% endif %}
   {% endfor %}
