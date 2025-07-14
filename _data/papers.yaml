@@ -1,27 +1,34 @@
 notable: 
-    - title: "CASPER: An Integrated Software Platform for Rapid Development of CRISPR Tools"
-      authors : Brian Mendoza*, Tannery Fry*, <b>David Dooley*</b>, Josh Herman, and Cong Trinh (* = equal contribution)
-      pdf : /papers/casper.pdf
-      journal: CRISPR Journal 
-      image : /images/casper.jpg
-      id : as;dlfjal;sdjf
-
-    - title: Gene Coexpression Connectivity Predicts Gene Targets Underlying High Ionic-Liquid Tolerance in <i>Yarrowia lipolytica</i>
-      authors : Caleb Walker, Seunghyun Ryu, Sergio Garcia, <b>David Dooley</b>, Brian Mendoza, and Cong Trinh
-      pdf : /papers/IL_paper.pdf
+    - title: Expanded genome and proteome reallocation in a novel, robust <i>Bacillus coagulans</i> strain capable of utilizing pentose and hexose sugars
+      authors : <b>David Dooley</b>, Seunghyun Ryu, Richard J. Giannone, Jackson Edwards, Bruce S. Dien, Patricia J. Slininger, and Cong T. Trinh
+      pdf : /papers/bco.pdf
       journal: mSystems
-      image : 
+      image : /images/bco.png
       id : aasdfj
-papers:
+
     - title: "CASPER: An Integrated Software Platform for Rapid Development of CRISPR Tools"
-      authors : Brian Mendoza*, Tannery Fry*, <b>David Dooley*</b>, Josh Herman, and Cong Trinh (* = equal contribution)
+      authors : Brian Mendoza*, Tannery Fry*, <b>David Dooley*</b>, Josh Herman, and Cong T. Trinh (* = equal contribution)
+      pdf : /papers/casper.pdf
+      journal: CRISPR Journal 
+      image : /images/casper.jpg
+      id : as;dlfjal;sdjf
+papers:
+    - title: Expanded genome and proteome reallocation in a novel, robust <i>Bacillus coagulans</i> strain capable of utilizing pentose and hexose sugars
+      authors : <b>David Dooley</b>, Seunghyun Ryu, Richard J. Giannone, Jackson Edwards, Bruce S. Dien, Patricia J. Slininger, and Cong T. Trinh
+      pdf : /papers/bco.pdf
+      journal: mSystems
+      image : /images/bco.png
+      id : aasdfj
+
+    - title: "CASPER: An Integrated Software Platform for Rapid Development of CRISPR Tools"
+      authors : Brian Mendoza*, Tannery Fry*, <b>David Dooley*</b>, Josh Herman, and Cong T. Trinh (* = equal contribution)
       pdf : /papers/casper.pdf
       journal: CRISPR Journal 
       image : /images/casper.jpg
       id : as;dlfjal;sdjf
 
     - title: Gene Coexpression Connectivity Predicts Gene Targets Underlying High Ionic-Liquid Tolerance in <i>Yarrowia lipolytica</i>
-      authors : Caleb Walker, Seunghyun Ryu, Sergio Garcia, <b>David Dooley</b>, Brian Mendoza, and Cong Trinh
+      authors : Caleb Walker, Seunghyun Ryu, Sergio Garcia, <b>David Dooley</b>, Brian Mendoza, and Cong T. Trinh
       pdf : /papers/IL_paper.pdf
       journal: mSystems
       image : 
