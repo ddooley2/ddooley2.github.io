@@ -1,4 +1,11 @@
 notable: 
+    - title:  Proteome Reallocation Reveals Dynamics and Mechanisms of Phage Infection and Defense in <i>Staphylococcus aureus</i>
+      authors : <b>David Dooley</b>, Dana L. Carper, Richard J. Giannone, and Cong T. Trinh
+      pdf : /papers/proteomics.pdf
+      journal: bioRxiv 
+      image : /images/proteomics.png
+      id : aasdfj
+
     - title: Expanded genome and proteome reallocation in a novel, robust <i>Bacillus coagulans</i> strain capable of utilizing pentose and hexose sugars
       authors : <b>David Dooley</b>, Seunghyun Ryu, Richard J. Giannone, Jackson Edwards, Bruce S. Dien, Patricia J. Slininger, and Cong T. Trinh
       pdf : /papers/bco.pdf
@@ -13,6 +20,13 @@ notable:
       image : /images/casper.jpg
       id : as;dlfjal;sdjf
 papers:
+    - title:  Proteome Reallocation Reveals Dynamics and Mechanisms of Phage Infection and Defense in <i>Staphylococcus aureus</i>
+      authors : <b>David Dooley</b>, Dana L. Carper, Richard J. Giannone, and Cong T. Trinh
+      pdf : /papers/proteomics.pdf
+      journal: bioRxiv 
+      image : /images/proteomics.png
+      id : aasdfj
+
     - title: Expanded genome and proteome reallocation in a novel, robust <i>Bacillus coagulans</i> strain capable of utilizing pentose and hexose sugars
       authors : <b>David Dooley</b>, Seunghyun Ryu, Richard J. Giannone, Jackson Edwards, Bruce S. Dien, Patricia J. Slininger, and Cong T. Trinh
       pdf : /papers/bco.pdf
@@ -33,3 +47,5 @@ papers:
       journal: mSystems
       image : 
       id : aasdfj
+
+
