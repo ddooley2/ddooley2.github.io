@@ -31,5 +31,5 @@
 .field-notes-page .notes-columns{width:100%}
 .field-notes-page .notes-bottom{margin-top:auto}
 .field-notes .notes-columns>.notes-publications{grid-column:1/-1;max-width:none;min-width:0}
-@media(max-width:700px){.field-notes .notes-hero-inner{grid-template-columns:1fr}.field-notes .notes-portrait{grid-row:1;width:130px;height:130px}.field-notes .notes-columns,.field-notes .notes-bottom-inner{grid-template-columns:1fr;gap:24px}.field-notes .notes-sidebar{border:0;border-bottom:1px solid #c9c9b9;padding:0 0 24px}}
+@media(max-width:700px){.field-notes .notes-hero-inner{grid-template-columns:1fr}.field-notes .notes-portrait{grid-row:1;width:130px;height:130px}.field-notes .notes-columns,.field-notes .notes-bottom-inner{grid-template-columns:1fr;gap:24px}.field-notes .notes-columns>main{order:-1}.field-notes .notes-sidebar{border:0;border-bottom:1px solid #c9c9b9;padding:0 0 24px}}
 @media(max-width:480px){.field-notes .notes-item{grid-template-columns:88px minmax(0,1fr);gap:12px}.field-notes .notes-item img{width:88px;height:70px}}
