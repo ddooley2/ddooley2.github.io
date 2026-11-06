@@ -1,19 +1,21 @@
 <!DOCTYPE html>
-<html>
+<html{% if page.homepage or page.field_notes %} class="field-notes-document"{% endif %}>
 
   {% include head.html %}
 
-  <body>
+  <body{% if page.homepage %} class="homepage"{% elsif page.field_notes %} class="field-notes-page"{% endif %}>
 
     {% include header.html %}
 
-    <div class="page-content">
-      <div class="wrapper">
+    <div class="page-content{% if page.homepage or page.field_notes %} page-content-homepage{% endif %}">
+      <div class="{% unless page.homepage or page.field_notes %}wrapper{% endunless %}">
         {{ content }}
       </div>
     </div>
 
-    {% include footer.html %}
+    {% unless page.homepage or page.field_notes %}
+      {% include footer.html %}
+    {% endunless %}
 
   </body>
 

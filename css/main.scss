@@ -4,9 +4,11 @@
 @charset "utf-8";
 
 
-
-
 // Our variables
+p {
+  text-align: justify;
+}
+
 $base-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 $base-font-size:   16px;
 $base-font-weight: 400;
@@ -24,7 +26,7 @@ $grey-color-light: lighten($grey-color, 40%);
 $grey-color-dark:  darken($grey-color, 25%);
 
 // Width of the content area
-$content-width:    900px;
+$content-width:    9000px;
 
 $on-palm:          700px;
 $on-laptop:        900px;
@@ -50,5 +52,6 @@ $on-laptop:        900px;
 @import
         "base",
         "layout",
-        "syntax-highlighting"
+        "syntax-highlighting",
+        "field-notes"
 ;

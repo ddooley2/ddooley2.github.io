@@ -1,0 +1,23 @@
+<div class="field-notes">
+  <header class="notes-hero"><div class="notes-hero-inner"><div><div class="notes-tag">Chemical & Biomolecular Engineering · University of Tennessee</div><h1>Postdoctoral Researcher</h1><p>My research examines phage–host interactions and develops CRISPR-Cas approaches to combat bacterial pathogens.</p><div class="notes-contact"><a href="mailto:dools.d@gmail.com">Email ↗</a><a href="https://linkedin.com/in/ddooley2">LinkedIn ↗</a><a href="https://github.com/ddooley2">GitHub ↗</a></div></div><img class="notes-portrait" src="https://avatars2.githubusercontent.com/u/52081023" alt="David Dooley"></div></header>
+  <div class="notes-columns">
+    <aside class="notes-sidebar"><h3>Research interests</h3><ul><li>How do phage genomes shape lysis/lysogeny decisions?</li><li>How do phage–host interactions change metabolism and treatment outcomes?</li><li>How do cells reallocate resources during phage attack?</li></ul><h3 style="margin-top:28px">Recognition</h3><div class="notes-award">2026 · Volunteer of Distinction</div><div class="notes-award">2025–2026 · Yates Dissertation Fellowship</div><div class="notes-award">2024 · Tickle College of Engineering Fellowship</div><div class="notes-award">2024 · Outstanding Achievement CBE Graduate Student Award</div><div class="notes-award">2023 · Tickle College of Engineering Fellowship</div><div class="notes-award">2023 · Outstanding Promise CBE Graduate Student Award</div><div class="notes-award">2021 · SARIF Summer Research Graduate Assistantship</div><div class="notes-award">2019 · Tennessee Tech Eminence Award for Outstanding Innovation</div><h3 style="margin-top:28px">Skills</h3><ul>
+        <li><b>Programming:</b> AI/ML (duh) · Python · R · C++ ·
+          <span style="font-family: Georgia, serif; white-space: nowrap;">L<sup style="font-size: 0.85em; vertical-align: 0.15em; margin-left: -0.36em; margin-right: -0.15em; text-transform: uppercase;">a</sup>T<sub style="font-size: 1em; vertical-align: -0.5ex; margin-left: -0.15em; margin-right: -0.125em;">E</sub>X</span></li>
+        <li><b>Computational Biology:</b> OMICS · SynBio Design (gRNA, primer, plasmid, etc.) · Kinetics Analysis </li>
+        <li><b>Lab:</b> Cloning · Culturing · Growth/Enzyme Kinetics · Library Screen · Protein Purification · (Lots of other stuff...)</li>
+      </ul></aside>
+    <main><section><h3>About</h3><p>
+    I am a biomolecular engineer with deep expertise across computational, systems, and synthetic biology. With 8+ years of experience in experimental design and execution, data analysis, and scientific communication, I am well-equipped to execute high-level research projects from start to finish using both computational and wet-lab techniques. Outside of the lab, I am a husband and father that enjoy spending time with my family, watching and playing sports, and reading classic literature.
+        </p></section><section><h3>Current research</h3><p>
+My current work develops next-generation CRISPR-Cas antimicrobials for virulent bacterial pathogens:
+<ol>
+  <li> Develop novel gRNA design solutions for selectively removing a bacterial pathogen from a commensal microbiome.</li>
+  <li> Construct and characterize orthogonal antimicrobial formulations with improved efficacy and mitigated resistance.</li>
+  <li> Improve phage-based packing and delivery of CRISPR payloads.</li>
+  <li> Understand genotype-phenotype connections using integrated OMICS analyses.</li>
+</ol>
+  </p></section><section><h3>Select publications</h3>{% for paper in site.data.papers.notable %}<article class="notes-item"><a href="{{ paper.pdf }}">{% if paper.image %}<img src="{{ paper.image }}" alt="Publication figure for {{ paper.title | strip_html | escape }}">{% endif %}</a><div><a class="notes-paper-title" href="{{ paper.pdf }}">{{ paper.title }}</a><small>{{ paper.authors }}<br><i>{{ paper.journal }}</i></small></div></article>{% endfor %}</section></main>
+  </div>
+  {% include field-notes-footer.html %}
+</div>

@@ -1,41 +1,35 @@
 ---
-layout: page
+layout: default
 title: Publications
 permalink: /papers/
 weight: 4
 show: 1
+field_notes: true
 ---
-
-<h3>Papers</h3>
-
-
-
-<p>
-  
-  
-My full list of papers is <a href="https://scholar.google.com/citations?user=Q93jRoYAAAAJ&hl=en">here</a>.
-</p>
-<table>
-{% for paper in site.data.papers.papers %}
-
-  <tr><td style="padding:10px; vertical-align: top;">
-      {% if paper.image %}
-      <a href="{{paper.pdf}}"><img width="200px" style="min-width:150px" src="{{paper.image}}"></a>
-      {% else %}
-      <a href="{{paper.pdf}}"><img height="75px" style="min-width:150px" src="https://avatar.vercel.sh/{{paper.id}}"></a>
-      {% endif %}
-</td><td style="padding:10px">
-<a class="paper" href="{{paper.pdf}}">
-    <b>{{paper.title}}</b>
-</a><br>
-{{paper.authors}}.<br>
-{{paper.conference}} <br>
-
-<br>
-
-</td></tr>
-
-{% endfor %}
-</table>
-
+<div class="field-notes">
+  <div class="notes-columns">
+    <main class="notes-publications">
+      <section>
+        <h1>Papers</h1>
+        <p>My full list of papers is <a href="https://scholar.google.com/citations?user=Q93jRoYAAAAJ&hl=en">here</a>.</p>
+        {% for paper in site.data.papers.papers %}
+        <article class="notes-item">
+          <a href="{{ paper.pdf }}" aria-label="Read {{ paper.title | strip_html | escape }}">
+            {% if paper.image %}
+            <img src="{{ paper.image }}" alt="Publication figure for {{ paper.title | strip_html | escape }}">
+            {% else %}
+            <img src="https://avatar.vercel.sh/{{ paper.id }}" alt="">
+            {% endif %}
+          </a>
+          <div>
+            <a class="notes-paper-title" href="{{ paper.pdf }}">{{ paper.title }}</a>
+            <small>{{ paper.authors }}.<br><i>{{ paper.journal }}</i></small>
+          </div>
+        </article>
+        {% endfor %}
+      </section>
+    </main>
+  </div>
+  {% include field-notes-footer.html %}
+</div>
 
